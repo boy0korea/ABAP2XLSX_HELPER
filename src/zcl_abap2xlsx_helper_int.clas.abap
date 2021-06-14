@@ -57,7 +57,9 @@ protected section.
     importing
       !IV_EXCEL type XSTRING
       !IV_FILENAME type CLIKE optional .
-  class-methods START_UPLOAD .
+  class-methods START_UPLOAD
+    returning
+      value(RV_EXCEL) type XSTRING .
   class-methods DO_DRM_ENCODE
     changing
       !CV_EXCEL type XSTRING .
@@ -483,10 +485,12 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
             IF lv_value IS NOT INITIAL.
 *              ASSIGN COMPONENT lv_column OF STRUCTURE <ls_data> TO <lv_data>.
               READ TABLE lt_field INTO ls_field INDEX lv_column.
-              CHECK: sy-subrc EQ 0.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
-              CHECK: sy-subrc EQ 0.
-              <lv_data> = lv_value.
+              IF sy-subrc EQ 0.
+                ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+                IF sy-subrc EQ 0.
+                  <lv_data> = lv_value.
+                ENDIF.
+              ENDIF.
             ENDIF.
             lv_column = lv_column + 1.
           ENDWHILE.
@@ -594,7 +598,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
     lv_excel = iv_excel.
 
     IF lv_excel IS INITIAL.
-      start_upload( ).
+      lv_excel = start_upload( ).
     ENDIF.
 
     CHECK: lv_excel IS NOT INITIAL.
@@ -670,8 +674,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lv_filename_path     TYPE string,
           lv_filename_fullpath TYPE string,
           lv_bin_filesize      TYPE i,
-          lt_temptable         TYPE w3mimetabtype,
-          lv_index             TYPE i.
+          lt_temptable         TYPE w3mimetabtype.
 
 
     lv_filename_string = iv_filename.
@@ -752,5 +755,103 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
   METHOD start_upload.
+    DATA: lt_file_table	TYPE filetable,
+          ls_file_table TYPE file_table,
+          lv_rc	        TYPE i,
+          lv_filename   TYPE string,
+          lv_filelength TYPE i,
+          lt_temptable  TYPE w3mimetabtype.
+
+
+    cl_gui_frontend_services=>file_open_dialog(
+      EXPORTING
+*        window_title            = window_title      " Title Of File Open Dialog
+        default_extension       = 'xlsx' " Default Extension
+*        default_filename        = default_filename  " Default File Name
+        file_filter             = 'excel (*.xlsx)|*.xlsx|'       " File Extension Filter String
+*        with_encoding           = with_encoding     " File Encoding
+*        initial_directory       = initial_directory " Initial Directory
+        multiselection          = abap_false    " Multiple selections poss.
+      CHANGING
+        file_table              = lt_file_table        " Table Holding Selected Files
+        rc                      = lv_rc                " Return Code, Number of Files or -1 If Error Occurred
+*        user_action             = user_action       " User Action (See Class Constants ACTION_OK, ACTION_CANCEL)
+*        file_encoding           = file_encoding
+      EXCEPTIONS
+        file_open_dialog_failed = 1                 " "Open File" dialog failed
+        cntl_error              = 2                 " Control error
+        error_no_gui            = 3                 " No GUI available
+        not_supported_by_gui    = 4                 " GUI does not support this
+        OTHERS                  = 5
+    ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    READ TABLE lt_file_table INTO ls_file_table INDEX 1.
+    CHECK: sy-subrc EQ 0.
+    lv_filename = ls_file_table-filename.
+
+    cl_gui_frontend_services=>gui_upload(
+      EXPORTING
+        filename                = lv_filename              " Name of file
+        filetype                = 'BIN'              " File Type (ASCII, Binary)
+*        has_field_separator     = space              " Columns Separated by Tabs in Case of ASCII Upload
+*        header_length           = 0                  " Length of Header for Binary Data
+*        read_by_line            = 'X'                " File Written Line-By-Line to the Internal Table
+*        dat_mode                = space              " Numeric and date fields are in DAT format in WS_DOWNLOAD
+*        codepage                = codepage           " Character Representation for Output
+*        ignore_cerr             = abap_true          " Ignore character set conversion errors?
+*        replacement             = '#'                " Replacement Character for Non-Convertible Characters
+*        virus_scan_profile      = virus_scan_profile " Virus Scan Profile
+      IMPORTING
+        filelength              = lv_filelength         " File Length
+*        header                  = header             " File Header in Case of Binary Upload
+      CHANGING
+        data_tab                = lt_temptable           " Transfer table for file contents
+*        isscanperformed         = space              " File already scanned
+      EXCEPTIONS
+        file_open_error         = 1                  " File does not exist and cannot be opened
+        file_read_error         = 2                  " Error when reading file
+        no_batch                = 3                  " Cannot execute front-end function in background
+        gui_refuse_filetransfer = 4                  " Incorrect front end or error on front end
+        invalid_type            = 5                  " Incorrect parameter FILETYPE
+        no_authority            = 6                  " No upload authorization
+        unknown_error           = 7                  " Unknown error
+        bad_data_format         = 8                  " Cannot Interpret Data in File
+        header_not_allowed      = 9                  " Invalid header
+        separator_not_allowed   = 10                 " Invalid separator
+        header_too_long         = 11                 " Header information currently restricted to 1023 bytes
+        unknown_dp_error        = 12                 " Error when calling data provider
+        access_denied           = 13                 " Access to file denied.
+        dp_out_of_memory        = 14                 " Not enough memory in data provider
+        disk_full               = 15                 " Storage medium is full.
+        dp_timeout              = 16                 " Data provider timeout
+        not_supported_by_gui    = 17                 " GUI does not support this
+        error_no_gui            = 18                 " GUI not available
+        OTHERS                  = 19
+    ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+      EXPORTING
+        input_length = lv_filelength
+*       first_line   = 0
+*       last_line    = 0
+      IMPORTING
+        buffer       = rv_excel
+      TABLES
+        binary_tab   = lt_temptable
+      EXCEPTIONS
+        failed       = 1
+        OTHERS       = 2.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.
