@@ -34,8 +34,9 @@ public section.
   class-methods CONVERT_ABAP_TO_EXCEL
     importing
       !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
     exporting
@@ -50,28 +51,157 @@ public section.
     exporting
       !ET_DATA type STANDARD TABLE
       !EV_ERROR_TEXT type STRING .
-  PROTECTED SECTION.
+protected section.
 
-    CLASS-METHODS start_download
-      IMPORTING
-        !iv_excel    TYPE xstring
-        !iv_filename TYPE clike OPTIONAL .
-    CLASS-METHODS start_upload .
-    CLASS-METHODS do_drm_encode
-      CHANGING
-        !cv_excel TYPE xstring .
-    CLASS-METHODS do_drm_decode
-      CHANGING
-        !cv_excel TYPE xstring .
-    CLASS-METHODS message
-      IMPORTING
-        !iv_error_text TYPE clike .
-  PRIVATE SECTION.
+  class-methods START_DOWNLOAD
+    importing
+      !IV_EXCEL type XSTRING
+      !IV_FILENAME type CLIKE optional .
+  class-methods START_UPLOAD .
+  class-methods DO_DRM_ENCODE
+    changing
+      !CV_EXCEL type XSTRING .
+  class-methods DO_DRM_DECODE
+    changing
+      !CV_EXCEL type XSTRING .
+  class-methods MESSAGE
+    importing
+      !IV_ERROR_TEXT type CLIKE .
+  class-methods ADD_FIXEDVALUE_SHEET
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
+      !IT_FIELD_CATALOG type ZEXCEL_T_FIELDCATALOG
+      !IO_EXCEL type ref to ZCL_EXCEL
+      !IV_WORKSHEET_INDEX type I default 1
+      !IV_HEADER_ROW_INDEX type I default 1
+    raising
+      ZCX_EXCEL .
+private section.
 ENDCLASS.
 
 
 
 CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
+
+
+  METHOD add_fixedvalue_sheet.
+    DATA: lo_worksheet       TYPE REF TO zcl_excel_worksheet,
+          lo_worksheet_fv    TYPE REF TO zcl_excel_worksheet,
+          lo_data_validation TYPE REF TO zcl_excel_data_validation,
+          ls_field_catalog   TYPE zexcel_s_fieldcatalog,
+          ls_field           TYPE zcl_abap2xlsx_helper=>ts_field,
+          lv_sheet_title_fv  TYPE zexcel_sheet_title,
+          lt_comp_view       TYPE abap_component_view_tab,
+          ls_comp_view       TYPE abap_simple_componentdescr,
+          lt_fixed_value     TYPE ddfixvalues,
+          ls_fixed_value     TYPE ddfixvalue,
+          lt_ddl             TYPE wdr_context_attr_value_list,
+          ls_ddl             TYPE wdr_context_attr_value,
+          lv_cell_value	     TYPE zexcel_cell_value,
+          lo_style_fv	       TYPE REF TO zcl_excel_style,
+          lv_style_fv	       TYPE zexcel_cell_style,
+          lv_lines_data      TYPE i,
+          lv_lines_ddl       TYPE i,
+          lv_index_col       TYPE i.
+
+    lo_worksheet = io_excel->get_worksheet_by_index( iv_worksheet_index ).
+    lv_lines_data = lines( it_data ).
+    IF lv_lines_data EQ 0.
+      lv_lines_data = 1.
+    ENDIF.
+    lv_lines_data = lv_lines_data + iv_header_row_index.
+
+    lo_style_fv = io_excel->add_new_style( ).
+    lo_style_fv->font->color-rgb = zcl_excel_style_color=>c_yellow.
+    lv_style_fv = lo_style_fv->get_guid( ).
+
+    CAST cl_abap_structdescr(
+      CAST cl_abap_tabledescr(
+        cl_abap_tabledescr=>describe_by_data( it_data )
+      )->get_table_line_type( )
+    )->get_included_view( RECEIVING p_result = lt_comp_view ).
+    SORT lt_comp_view BY name.
+
+    LOOP AT it_field_catalog INTO ls_field_catalog.
+      lv_index_col = sy-tabix.
+      CLEAR: lt_ddl.
+
+
+      " 1. get from it_field-fxied_values
+      READ TABLE it_field INTO ls_field INDEX lv_index_col.
+      IF sy-subrc EQ 0.
+        lt_ddl = ls_field-fixed_values.
+      ENDIF.
+
+      " 2. get from ddic domain fixed value
+      IF lt_ddl IS INITIAL.
+        READ TABLE lt_comp_view INTO ls_comp_view WITH KEY name = ls_field_catalog-fieldname BINARY SEARCH.
+        IF ls_comp_view-type->is_ddic_type( ) EQ abap_true.
+          lt_fixed_value = CAST cl_abap_elemdescr( ls_comp_view-type )->get_ddic_fixed_values( ).
+          READ TABLE lt_fixed_value INTO ls_fixed_value WITH KEY option = 'BT'.
+          CHECK: sy-subrc <> 0.
+          CLEAR: lt_ddl.
+          LOOP AT lt_fixed_value INTO ls_fixed_value.
+            CLEAR: ls_ddl.
+            ls_ddl-value = ls_fixed_value-low.
+            ls_ddl-text = ls_fixed_value-ddtext.
+            APPEND ls_ddl TO lt_ddl.
+          ENDLOOP.
+        ENDIF.
+      ENDIF.
+
+      CHECK: lt_ddl IS NOT INITIAL.
+      lv_lines_ddl = lines( lt_ddl ) + 1.
+
+      " create fv sheet
+      lv_sheet_title_fv = ls_field_catalog-fieldname.
+      lo_worksheet_fv = io_excel->get_worksheet_by_name( lv_sheet_title_fv ).
+      IF lo_worksheet_fv IS INITIAL.
+        lo_worksheet_fv = io_excel->add_new_worksheet( lv_sheet_title_fv ).
+        lo_worksheet_fv->bind_table(
+          EXPORTING
+            ip_table     = lt_ddl
+        ).
+        lo_worksheet_fv->zif_excel_sheet_protection~protected = lo_worksheet_fv->zif_excel_sheet_protection~c_protected.
+        lo_worksheet_fv->zif_excel_sheet_protection~sheet = lo_worksheet_fv->zif_excel_sheet_protection~c_active.
+        lo_worksheet_fv->zif_excel_sheet_protection~objects = lo_worksheet_fv->zif_excel_sheet_protection~c_active.
+        IF lv_lines_ddl <= 3.
+          lo_worksheet_fv->zif_excel_sheet_properties~hidden = lo_worksheet_fv->zif_excel_sheet_properties~c_hidden.
+        ENDIF.
+      ENDIF.
+
+      " add validation
+      lo_data_validation = lo_worksheet->add_new_data_validation( ).
+      lo_data_validation->type = zcl_excel_data_validation=>c_type_list.
+      lo_data_validation->allowblank = abap_true.
+      lo_data_validation->formula1 = lv_sheet_title_fv && '!$A$2:$A$' && lv_lines_ddl.
+      lo_data_validation->cell_column = zcl_excel_common=>convert_column2alpha( lv_index_col ).
+      lo_data_validation->cell_column_to = lo_data_validation->cell_column.
+      lo_data_validation->cell_row = iv_header_row_index + 1.
+      lo_data_validation->cell_row_to = lv_lines_data.
+
+      IF iv_header_row_index IS NOT INITIAL AND lines( lt_ddl ) > 2.
+        lo_worksheet->get_cell(
+          EXPORTING
+            ip_column  = lo_data_validation->cell_column
+            ip_row     = iv_header_row_index
+          IMPORTING
+            ep_value   = lv_cell_value
+        ).
+        lo_worksheet->set_cell(
+          EXPORTING
+            ip_column    = lo_data_validation->cell_column
+            ip_row       = iv_header_row_index
+            ip_value     = lv_cell_value
+            ip_style     = lv_style_fv
+            ip_hyperlink = zcl_excel_hyperlink=>create_internal_link( lv_sheet_title_fv && '!A1' )
+        ).
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
 
 
   METHOD class_constructor.
@@ -81,25 +211,26 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
   METHOD convert_abap_to_excel.
 * http://www.abap2xlsx.org
 
-    DATA: lo_excel             TYPE REF TO zcl_excel,
-          lo_writer            TYPE REF TO zif_excel_writer,
-          lo_worksheet         TYPE REF TO zcl_excel_worksheet,
-          ls_table_settings    TYPE zexcel_s_table_settings,
-          lt_field_catalog     TYPE zexcel_t_fieldcatalog,
-          lt_field_catalog2    TYPE zexcel_t_fieldcatalog,
-          ls_field_catalog     TYPE zexcel_s_fieldcatalog,
-          ls_field             TYPE zcl_abap2xlsx_helper=>ts_field,
-          lo_zcx_excel         TYPE REF TO zcx_excel,
-          lv_sheet_title       TYPE zexcel_sheet_title,
-          lv_filename_string   TYPE string,
-          lv_filename_path     TYPE string,
-          lv_filename_fullpath TYPE string,
-          lv_bin_filesize      TYPE i,
-          lt_temptable         TYPE w3mimetabtype,
-          lv_index             TYPE i.
+    DATA: lo_excel           TYPE REF TO zcl_excel,
+          lo_writer          TYPE REF TO zif_excel_writer,
+          lo_worksheet       TYPE REF TO zcl_excel_worksheet,
+          ls_table_settings  TYPE zexcel_s_table_settings,
+          lt_field_catalog   TYPE zexcel_t_fieldcatalog,
+          lt_field_catalog2  TYPE zexcel_t_fieldcatalog,
+          ls_field_catalog   TYPE zexcel_s_fieldcatalog,
+          ls_field           TYPE zcl_abap2xlsx_helper=>ts_field,
+          lo_zcx_excel       TYPE REF TO zcx_excel,
+          lv_sheet_title     TYPE zexcel_sheet_title,
+          lt_ddic_object     TYPE dd_x031l_table,
+          ls_ddic_object     TYPE x031l,
+          ls_ddic_object_ref TYPE x031l,
+          lv_amount_external TYPE bapicurr-bapicurr,
+          lv_index_col       TYPE i,
+          lv_index           TYPE i.
+    FIELD-SYMBOLS: <ls_data>     TYPE data,
+                   <lv_data>     TYPE data,
+                   <lv_data_ref> TYPE data.
     CLEAR ev_error_text.
-
-* TODO: fixed value 자동 탭 추가 기능.
 
     TRY.
 
@@ -131,6 +262,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
             READ TABLE lt_field_catalog2 INTO ls_field_catalog WITH KEY fieldname = ls_field-fieldname BINARY SEARCH.
             CHECK: sy-subrc EQ 0.
             ls_field_catalog-position = lv_index.
+            ls_field_catalog-dynpfld = abap_true.
             IF ls_field-label_text IS NOT INITIAL.
               ls_field_catalog-scrtext_s = ls_field_catalog-scrtext_m = ls_field_catalog-scrtext_l = ls_field-label_text.
             ENDIF.
@@ -139,10 +271,49 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         ENDIF.
 
 
+        DELETE lt_field_catalog WHERE dynpfld NE abap_true.
         lo_worksheet->bind_table( ip_table          = it_data
                                   it_field_catalog  = lt_field_catalog
                                   is_table_settings = ls_table_settings ).
 
+        " currency
+        lt_ddic_object =
+        CAST cl_abap_structdescr(
+          CAST cl_abap_tabledescr(
+            cl_abap_tabledescr=>describe_by_data( it_data )
+          )->get_table_line_type( )
+        )->get_ddic_object( ).
+        LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
+          READ TABLE lt_field_catalog TRANSPORTING NO FIELDS WITH KEY fieldname = ls_ddic_object-fieldname.
+          CHECK: sy-subrc EQ 0.
+          lv_index_col = sy-tabix.
+          READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
+          CHECK: sy-subrc EQ 0.
+          LOOP AT it_data ASSIGNING <ls_data>.
+            lv_index = sy-tabix + 1.
+            ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+            ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
+            IF <lv_data> IS NOT INITIAL AND
+               <lv_data_ref> IS NOT INITIAL AND
+               <lv_data_ref> <> 'USD' AND
+               <lv_data_ref> <> 'EUR'.
+              CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
+                EXPORTING
+                  currency        = <lv_data_ref>
+                  amount_internal = <lv_data>
+                IMPORTING
+                  amount_external = lv_amount_external.
+              lo_worksheet->set_cell(
+                EXPORTING
+                  ip_column    = lv_index_col
+                  ip_row       = lv_index
+                  ip_value     = lv_amount_external
+              ).
+            ENDIF.
+          ENDLOOP.
+        ENDLOOP.
+
+        " auto column width
         IF iv_auto_column_width EQ abap_true.
           lv_index = lines( lt_field_catalog ).
           DO lv_index TIMES.
@@ -152,6 +323,20 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                 ip_width_autosize = abap_true
             ).
           ENDDO.
+        ENDIF.
+
+        " add fixed value sheet
+        IF iv_add_fixedvalue_sheet EQ abap_true.
+          add_fixedvalue_sheet(
+            EXPORTING
+              it_data             = it_data
+              it_field            = it_field
+              it_field_catalog    = lt_field_catalog
+              io_excel            = lo_excel
+              iv_worksheet_index  = 1
+              iv_header_row_index = 1
+          ).
+          lo_excel->set_active_sheet_index( 1 ).
         ENDIF.
 
         "freeze column headers when scrolling
@@ -174,26 +359,32 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
   METHOD convert_excel_to_abap.
 * http://www.abap2xlsx.org
 
-    DATA: lo_excel          TYPE REF TO zcl_excel,
-          lo_reader         TYPE REF TO zif_excel_reader,
-          lo_worksheet      TYPE REF TO zcl_excel_worksheet,
-          lt_field          TYPE zcl_abap2xlsx_helper=>tt_field,
-          ls_field          TYPE zcl_abap2xlsx_helper=>ts_field,
-          lv_highest_column TYPE int4,
-          lv_highest_row    TYPE int4,
-          lv_column         TYPE int4,
-          lv_col_str        TYPE zexcel_cell_column_alpha,
-          lv_row            TYPE int4,
-          lv_value          TYPE zexcel_cell_value,
-          lv_date           TYPE datum,
-          lv_time           TYPE uzeit,
-          lv_char_row       TYPE string,
-          lv_style_guid     TYPE zexcel_cell_style,
-          ls_stylemapping   TYPE zexcel_s_stylemapping,
-          lo_root           TYPE REF TO cx_root,
-          lo_zcx_excel      TYPE REF TO zcx_excel.
-    FIELD-SYMBOLS: <ls_data> TYPE data,
-                   <lv_data> TYPE data.
+    DATA: lo_excel                    TYPE REF TO zcl_excel,
+          lo_reader                   TYPE REF TO zif_excel_reader,
+          lo_worksheet                TYPE REF TO zcl_excel_worksheet,
+          lt_field                    TYPE zcl_abap2xlsx_helper=>tt_field,
+          ls_field                    TYPE zcl_abap2xlsx_helper=>ts_field,
+          lv_highest_column           TYPE int4,
+          lv_highest_row              TYPE int4,
+          lv_column                   TYPE int4,
+          lv_col_str                  TYPE zexcel_cell_column_alpha,
+          lv_row                      TYPE int4,
+          lv_value                    TYPE zexcel_cell_value,
+          lv_date                     TYPE datum,
+          lv_time                     TYPE uzeit,
+          lv_char_row                 TYPE string,
+          lv_style_guid               TYPE zexcel_cell_style,
+          ls_stylemapping             TYPE zexcel_s_stylemapping,
+          lt_ddic_object              TYPE dd_x031l_table,
+          ls_ddic_object              TYPE x031l,
+          ls_ddic_object_ref          TYPE x031l,
+          lv_ddic_object_has_currency TYPE flag,
+          lv_amount_external          TYPE bapicurr-bapicurr,
+          lo_root                     TYPE REF TO cx_root,
+          lo_zcx_excel                TYPE REF TO zcx_excel.
+    FIELD-SYMBOLS: <ls_data>     TYPE data,
+                   <lv_data>     TYPE data,
+                   <lv_data_ref> TYPE data.
 
     CLEAR: ev_error_text, et_data[].
 
@@ -208,6 +399,19 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
               et_field         = lt_field
           ).
         ENDIF.
+
+        lt_ddic_object =
+        CAST cl_abap_structdescr(
+          CAST cl_abap_tabledescr(
+            cl_abap_tabledescr=>describe_by_data( et_data )
+          )->get_table_line_type( )
+        )->get_ddic_object( ).
+        LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
+          READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
+          CHECK: sy-subrc EQ 0.
+          lv_ddic_object_has_currency = abap_true.
+          EXIT.
+        ENDLOOP.
 
         CREATE OBJECT lo_reader TYPE zcl_excel_reader_2007.
         lo_excel = lo_reader->load( iv_excel  ). "Load data into reader
@@ -287,10 +491,46 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
             lv_column = lv_column + 1.
           ENDWHILE.
 
+
+          " currency
+          IF lv_ddic_object_has_currency EQ abap_true.
+            LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
+              READ TABLE lt_field TRANSPORTING NO FIELDS WITH KEY fieldname = ls_ddic_object-fieldname.
+              CHECK: sy-subrc EQ 0.
+              lv_column = sy-tabix.
+              READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
+              CHECK: sy-subrc EQ 0.
+              ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
+              IF <lv_data_ref> IS NOT INITIAL AND
+                 <lv_data_ref> <> 'USD' AND
+                 <lv_data_ref> <> 'EUR'.
+                lv_col_str = zcl_excel_common=>convert_column2alpha( lv_column ).
+                lo_worksheet->get_cell(
+                  EXPORTING
+                    ip_column = lv_col_str
+                    ip_row    = lv_row
+                  IMPORTING
+                    ep_value  = lv_value ).
+                lv_amount_external = lv_value.
+                IF lv_amount_external IS NOT INITIAL.
+                  ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+                  CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_INTERNAL'
+                    EXPORTING
+                      currency             = <lv_data_ref>
+                      amount_external      = lv_amount_external
+                      max_number_of_digits = 23
+                    IMPORTING
+                      amount_internal      = <lv_data>.
+                ENDIF.
+              ENDIF.
+            ENDLOOP.
+          ENDIF.
+
+          " delete empty line
           IF <ls_data> IS INITIAL.
             DELETE et_data INDEX lines( et_data ).
           ENDIF.
-          lv_row    = lv_row + 1.
+          lv_row = lv_row + 1.
         ENDWHILE.
 
       CATCH cx_root INTO lo_root.
@@ -389,7 +629,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           ls_field TYPE zcl_abap2xlsx_helper=>ts_field.
 
     lt_fc = zcl_excel_common=>get_fieldcatalog( ip_table = it_data ).
-    DELETE lt_fc WHERE dynpfld = abap_false.
+    DELETE lt_fc WHERE dynpfld NE abap_true.
 
     LOOP AT lt_fc INTO ls_fc.
       ls_field-fieldname = ls_fc-fieldname.

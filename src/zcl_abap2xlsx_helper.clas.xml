@@ -36,6 +36,12 @@
      <LANGU>E</LANGU>
      <DESCRIPT>Upload</DESCRIPT>
     </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ABAP2XLSX_HELPER</CLSNAME>
+     <CMPNAME>TEST</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Do Not Call. This is test.</DESCRIPT>
+    </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>
  </asx:abap>

@@ -1,69 +1,69 @@
-class ZCL_ABAP2XLSX_HELPER definition
-  public
-  create public .
+CLASS zcl_abap2xlsx_helper DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF ts_field,
+    TYPES:
+      BEGIN OF ts_field,
         fieldname    TYPE fieldname,
         label_text   TYPE scrtext_l,
         fixed_values TYPE wdr_context_attr_value_list,
       END OF ts_field .
-  types:
-    tt_field TYPE TABLE OF ts_field .
+    TYPES:
+      tt_field TYPE TABLE OF ts_field .
 
-  class-methods IS_ABAP2XLSX_INSTALLED
-    importing
-      !IV_WITH_MESSAGE type FLAG default ABAP_TRUE
-    returning
-      value(RV_INSTALLED) type FLAG .
-  class-methods EXCEL_DOWNLOAD
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_FILENAME type CLIKE optional
-      !IV_SHEET_TITLE type CLIKE optional
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods EXCEL_UPLOAD
-    importing
-      !IV_EXCEL type XSTRING optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-  class-methods GET_FIELDCATALOG
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
-  class-methods CONVERT_ABAP_TO_EXCEL
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_SHEET_TITLE type CLIKE optional
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods CONVERT_EXCEL_TO_ABAP
-    importing
-      !IV_EXCEL type XSTRING
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-  class-methods TEST .
+    CLASS-METHODS is_abap2xlsx_installed
+      IMPORTING
+        !iv_with_message    TYPE flag DEFAULT abap_true
+      RETURNING
+        VALUE(rv_installed) TYPE flag .
+    CLASS-METHODS excel_download
+      IMPORTING
+        !it_data              TYPE STANDARD TABLE
+        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_filename          TYPE clike OPTIONAL
+        !iv_sheet_title       TYPE clike OPTIONAL
+        !iv_auto_column_width TYPE flag DEFAULT abap_true
+        !iv_default_descr     TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel             TYPE xstring
+        !ev_error_text        TYPE string .
+    CLASS-METHODS excel_upload
+      IMPORTING
+        !iv_excel      TYPE xstring OPTIONAL
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+    CLASS-METHODS get_fieldcatalog
+      IMPORTING
+        !it_data          TYPE STANDARD TABLE
+        !iv_default_descr TYPE c DEFAULT 'L'
+      EXPORTING
+        !et_field         TYPE zcl_abap2xlsx_helper=>tt_field .
+    CLASS-METHODS convert_abap_to_excel
+      IMPORTING
+        !it_data              TYPE STANDARD TABLE
+        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_sheet_title       TYPE clike OPTIONAL
+        !iv_auto_column_width TYPE flag DEFAULT abap_true
+        !iv_default_descr     TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel             TYPE xstring
+        !ev_error_text        TYPE string .
+    CLASS-METHODS convert_excel_to_abap
+      IMPORTING
+        !iv_excel      TYPE xstring
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+    CLASS-METHODS test .
   PROTECTED SECTION.
 
     CLASS-METHODS check_install
@@ -221,8 +221,10 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   METHOD test.
     DATA: lt_sflight  TYPE TABLE OF sflight,
           lt_sflight2 TYPE TABLE OF sflight,
+          lt_field    TYPE zcl_abap2xlsx_helper=>tt_field,
           ls_sflight  TYPE sflight,
           lv_xstring  TYPE xstring.
+    FIELD-SYMBOLS: <ls_field> TYPE zcl_abap2xlsx_helper=>ts_field.
 
     SELECT *
       FROM sflight
@@ -236,14 +238,47 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         INTO TABLE lt_sflight.
     ENDIF.
 
-    excel_download(
+    zcl_abap2xlsx_helper=>get_fieldcatalog(
+      EXPORTING
+        it_data          = lt_sflight
+      IMPORTING
+        et_field         = lt_field
+    ).
+    LOOP AT lt_field ASSIGNING <ls_field>.
+      CASE <ls_field>-fieldname.
+        WHEN 'CARRID'.
+          SELECT carrid AS value carrname AS text
+            INTO CORRESPONDING FIELDS OF TABLE <ls_field>-fixed_values
+            FROM scarr.
+          SORT <ls_field>-fixed_values BY value.
+        WHEN 'CONNID'.
+          SELECT connid AS value connid AS text
+            INTO CORRESPONDING FIELDS OF TABLE <ls_field>-fixed_values
+            FROM spfli.
+          SORT <ls_field>-fixed_values BY value.
+        WHEN 'CURRENCY'.
+          SELECT currkey AS value currkey AS text
+            INTO CORRESPONDING FIELDS OF TABLE <ls_field>-fixed_values
+            FROM scurx.
+          SORT <ls_field>-fixed_values BY value.
+        WHEN 'PLANETYPE'.
+          SELECT planetype AS value planetype AS text
+            INTO CORRESPONDING FIELDS OF TABLE <ls_field>-fixed_values
+            FROM saplane.
+          SORT <ls_field>-fixed_values BY value.
+        WHEN OTHERS.
+      ENDCASE.
+    ENDLOOP.
+
+    zcl_abap2xlsx_helper=>excel_download(
       EXPORTING
         it_data  = lt_sflight
+        it_field = lt_field
       IMPORTING
         ev_excel = lv_xstring
     ).
 
-    excel_upload(
+    zcl_abap2xlsx_helper=>excel_upload(
       EXPORTING
         iv_excel     = lv_xstring
       IMPORTING
