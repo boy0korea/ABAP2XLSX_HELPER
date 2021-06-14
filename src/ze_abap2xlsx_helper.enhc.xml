@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_ENHC" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <SHORTTEXT>ABAP2XLSX_HELPER Enhancements</SHORTTEXT>
+   <ENH_CHILDS>
+    <ENHNAME>ZE_ABAP2XLSX_HELPER_LIST_RENDE</ENHNAME>
+    <ENHNAME>ZE_ABAP2XLSX_HELPER_LIST_ASSIS</ENHNAME>
+   </ENH_CHILDS>
+   <SOTR>
+    <item>
+     <HEADER>
+      <CONCEPT>E04F4306E0601EDBB3A42973BA4C080B</CONCEPT>
+      <CREA_LAN>E</CREA_LAN>
+      <TRALA_TYPE>1</TRALA_TYPE>
+      <OBJID_VEC>AACA</OBJID_VEC>
+     </HEADER>
+     <ENTRIES>
+      <SOTR_TEXT>
+       <CONCEPT>E04F4306E0601EDBB3A42973BA4C080B</CONCEPT>
+       <LANGU>E</LANGU>
+       <LFD_NUM>0001</LFD_NUM>
+       <FLAG_CNTXT>X</FLAG_CNTXT>
+       <STATUS>R</STATUS>
+       <LENGTH>044</LENGTH>
+       <TEXT>ABAP2XLSX_HELPER Enhancements</TEXT>
+      </SOTR_TEXT>
+     </ENTRIES>
+    </item>
+   </SOTR>
+   <SOTR_USE>
+    <SOTR_USE>
+     <PGMID>R3TR</PGMID>
+     <OBJECT>ENHC</OBJECT>
+     <OBJ_NAME>ZE_ABAP2XLSX_HELPER</OBJ_NAME>
+     <CONCEPT>E04F4306E0601EDBB3A42973BA4C080B</CONCEPT>
+     <LFD_NUM>0001</LFD_NUM>
+    </SOTR_USE>
+   </SOTR_USE>
+  </asx:values>
+ </asx:abap>
+</abapGit>

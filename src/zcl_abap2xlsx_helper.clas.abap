@@ -13,6 +13,8 @@ public section.
   types:
     tt_field TYPE TABLE OF ts_field .
 
+  class-data GV_LIST_UIBB_EXPORT_ON type FLAG value ABAP_TRUE ##NO_TEXT.
+
   class-methods EXCEL_DOWNLOAD
     importing
       !IT_DATA type STANDARD TABLE
@@ -73,6 +75,16 @@ public section.
       !IV_ERROR_TEXT type CLIKE optional
     returning
       value(RV_INSTALLED) type FLAG .
+  class-methods ENH_CL_FPM_LIST_UIBB_ASSIST_AT
+    importing
+      !IV_FORMAT type FPMGB_EXPORT_FORMAT
+      !IRT_RESULT_DATA type ref to DATA
+      !IT_P13N_COLUMN type IF_FPM_LIST_SETTINGS_VARIANT=>TY_T_O_COLUMN
+      !IT_FIELD_USAGE type FPMGB_T_FIELDUSAGE .
+  class-methods ENH_CL_FPM_LIST_UIBB_RENDERER_
+    importing
+      !IO_EXPORT_BTN_CHOICE type ref to CL_WD_TOOLBAR_BTN_CHOICE
+      !IO_VIEW type ref to IF_WD_VIEW .
 protected section.
 
   class-methods README .
@@ -132,6 +144,130 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
       IMPORTING
         et_data       = et_data
         ev_error_text = ev_error_text.
+  ENDMETHOD.
+
+
+  METHOD enh_cl_fpm_list_uibb_assist_at.
+    DATA: lt_field2      TYPE tt_field,
+          lt_field       TYPE tt_field,
+          ls_field       TYPE ts_field,
+          ls_field_usage TYPE fpmgb_s_fieldusage,
+          lo_p13n_column TYPE REF TO if_fpm_list_settings_column,
+          lv_column_name TYPE string.
+    FIELD-SYMBOLS: <lt_data> TYPE table.
+
+    CHECK: is_abap2xlsx_installed( ) EQ abap_true,
+           gv_list_uibb_export_on EQ abap_true.
+
+    IF iv_format EQ 'ZA2X'.
+      ASSIGN irt_result_data->* TO <lt_data>.
+
+      get_fieldcatalog(
+        EXPORTING
+          it_data          = <lt_data>
+        IMPORTING
+          et_field         = lt_field2
+      ).
+
+      LOOP AT it_p13n_column INTO lo_p13n_column.
+        CHECK: lo_p13n_column->is_visible( ).
+        lv_column_name = lo_p13n_column->get_name( ).
+        READ TABLE lt_field2 INTO ls_field WITH KEY fieldname = lv_column_name.
+        CHECK: sy-subrc EQ 0.
+        READ TABLE it_field_usage INTO ls_field_usage WITH KEY name = lv_column_name.
+        ls_field-label_text = ls_field_usage-label_text.
+        APPEND ls_field TO lt_field.
+      ENDLOOP.
+
+      excel_download(
+        EXPORTING
+          it_data              = <lt_data>
+          it_field             = lt_field
+      ).
+    ENDIF.
+
+
+* enhancement 위치:
+*Enhanced Development Object    CL_FPM_LIST_UIBB_ASSIST_ATS
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""$"$\SE:(1) Class LCL_EXPORT_ACTION, Method EXECUTE, Start                                                                                                    A
+*$*$-Start: (1)---------------------------------------------------------------------------------$*$*
+*ENHANCEMENT 1  ZE_ABAP2XLSX_HELPER_LIST_ASSIS.    "active version
+** additional export menu.
+*    DATA: zlrt_result_data TYPE REF TO data.
+*
+*    IF me->mv_format EQ 'ZA2X'.
+*      me->get_result_data(
+*        exporting
+*          iv_data_only        = abap_true
+*        importing
+*          ert_result_data     = zlrt_result_data
+*      ).
+*      zcl_abap2xlsx_helper=>enh_cl_fpm_list_uibb_assist_at(
+*        EXPORTING
+*          iv_format       = me->mv_format
+*          irt_result_data = zlrt_result_data
+*          it_p13n_column  = me->mo_list_uibb_assist->mo_personalization_api->get_current_variant( )->get_columns( )
+*          it_field_usage  = me->mo_list_uibb_assist->mt_field_usage
+*      ).
+*      RETURN.
+*    ENDIF.
+*ENDENHANCEMENT.
+*$*$-End:   (1)---------------------------------------------------------------------------------$*$*
+  ENDMETHOD.
+
+
+  METHOD enh_cl_fpm_list_uibb_renderer_.
+    DATA: lo_tab_action TYPE REF TO cl_wd_menu_action_item.
+
+    CHECK: is_abap2xlsx_installed( ) EQ abap_true,
+           gv_list_uibb_export_on EQ abap_true.
+
+    CHECK: io_export_btn_choice IS BOUND.
+
+*     io_export_btn_choice->remove_choice(
+*       EXPORTING
+*         id         = 'MNUAI_FPM_EXPORT_CSV'
+*     ).
+*     io_export_btn_choice->remove_choice(
+*       EXPORTING
+*         id         = 'MNUAI_FPM_EXPORT_PDF'
+*     ).
+
+    lo_tab_action =
+      cl_wd_menu_action_item=>new_menu_action_item(
+        id           = `ZMNUAI_FPM_EXPORT_ZDB`              "#EC NOTEXT
+        view         = io_view
+        on_action    = 'DISPATCH_EXPORT'  " lif_renderer_constants=>cs_table_action-export
+        text         = 'Excel in DB format'
+        enabled      = abap_true
+        visible      = abap_true
+    ).
+    DATA(lt_action_parameters) = VALUE wdr_name_value_list(
+      (
+         name  = 'FORMAT'   " lc_export_action_format_param
+         value = 'ZA2X'
+      )
+    ).
+    lo_tab_action->map_on_action( lt_action_parameters ).
+    io_export_btn_choice->add_choice( lo_tab_action ).
+
+* enhancement 위치:
+*Enhanced Development Object    CL_FPM_LIST_UIBB_RENDERER_ATS
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""$"$\SE:(1) Class LCL_TABLE_RENDERER, Method RENDER_STANDARD_TOOLBAR_ITEMS, End                                                                               A
+*$*$-Start: (1)---------------------------------------------------------------------------------$*$*
+*ENHANCEMENT 1  ZE_ABAP2XLSX_HELPER_LIST_RENDE.    "active version
+** additional export menu.
+*
+*    IF lo_export_btn_choice IS BOUND.
+*      zcl_abap2xlsx_helper=>enh_cl_fpm_list_uibb_renderer_(
+*        EXPORTING
+*          io_export_btn_choice = lo_export_btn_choice
+*          io_view              = io_view
+*      ).
+*    ENDIF.
+*
+*ENDENHANCEMENT.
+*$*$-End:   (1)---------------------------------------------------------------------------------$*$*
   ENDMETHOD.
 
 
