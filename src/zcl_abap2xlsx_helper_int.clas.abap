@@ -4,7 +4,6 @@ class ZCL_ABAP2XLSX_HELPER_INT definition
 
 public section.
 
-  class-methods CLASS_CONSTRUCTOR .
   class-methods EXCEL_DOWNLOAD
     importing
       !IT_DATA type STANDARD TABLE
@@ -58,17 +57,14 @@ protected section.
       !IV_EXCEL type XSTRING
       !IV_FILENAME type CLIKE optional .
   class-methods START_UPLOAD
-    returning
-      value(RV_EXCEL) type XSTRING .
+    exporting
+      !EV_EXCEL type XSTRING .
   class-methods DO_DRM_ENCODE
     changing
       !CV_EXCEL type XSTRING .
   class-methods DO_DRM_DECODE
     changing
       !CV_EXCEL type XSTRING .
-  class-methods MESSAGE
-    importing
-      !IV_ERROR_TEXT type CLIKE .
   class-methods ADD_FIXEDVALUE_SHEET
     importing
       !IT_DATA type STANDARD TABLE
@@ -79,7 +75,7 @@ protected section.
       !IV_HEADER_ROW_INDEX type I default 1
     raising
       ZCX_EXCEL .
-private section.
+  PRIVATE SECTION.
 ENDCLASS.
 
 
@@ -88,6 +84,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
   METHOD add_fixedvalue_sheet.
+* http://www.abap2xlsx.org
     DATA: lo_worksheet       TYPE REF TO zcl_excel_worksheet,
           lo_worksheet_fv    TYPE REF TO zcl_excel_worksheet,
           lo_data_validation TYPE REF TO zcl_excel_data_validation,
@@ -156,7 +153,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       CHECK: lt_ddl IS NOT INITIAL.
       lv_lines_ddl = lines( lt_ddl ) + 1.
 
-      " create fv sheet
+      " create fv-sheet
       lv_sheet_title_fv = ls_field_catalog-fieldname.
       lo_worksheet_fv = io_excel->get_worksheet_by_name( lv_sheet_title_fv ).
       IF lo_worksheet_fv IS INITIAL.
@@ -169,6 +166,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         lo_worksheet_fv->zif_excel_sheet_protection~sheet = lo_worksheet_fv->zif_excel_sheet_protection~c_active.
         lo_worksheet_fv->zif_excel_sheet_protection~objects = lo_worksheet_fv->zif_excel_sheet_protection~c_active.
         IF lv_lines_ddl <= 3.
+          " If it has 1 or 2 fixed values, hide fv-sheet.
           lo_worksheet_fv->zif_excel_sheet_properties~hidden = lo_worksheet_fv->zif_excel_sheet_properties~c_hidden.
         ENDIF.
       ENDIF.
@@ -183,7 +181,8 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       lo_data_validation->cell_row = iv_header_row_index + 1.
       lo_data_validation->cell_row_to = lv_lines_data.
 
-      IF iv_header_row_index IS NOT INITIAL AND lines( lt_ddl ) > 2.
+      IF iv_header_row_index IS NOT INITIAL AND lo_worksheet_fv->zif_excel_sheet_properties~hidden IS INITIAL.
+        " link to fv-sheet @ header
         lo_worksheet->get_cell(
           EXPORTING
             ip_column  = lo_data_validation->cell_column
@@ -206,13 +205,8 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD class_constructor.
-  ENDMETHOD.
-
-
   METHOD convert_abap_to_excel.
 * http://www.abap2xlsx.org
-
     DATA: lo_excel           TYPE REF TO zcl_excel,
           lo_writer          TYPE REF TO zif_excel_writer,
           lo_worksheet       TYPE REF TO zcl_excel_worksheet,
@@ -355,15 +349,20 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
     ENDTRY.
 
 
+    do_drm_decode(
+      CHANGING
+        cv_excel = ev_excel
+    ).
+
   ENDMETHOD.
 
 
   METHOD convert_excel_to_abap.
 * http://www.abap2xlsx.org
-
     DATA: lo_excel                    TYPE REF TO zcl_excel,
           lo_reader                   TYPE REF TO zif_excel_reader,
           lo_worksheet                TYPE REF TO zcl_excel_worksheet,
+          lv_excel                    TYPE xstring,
           lt_field                    TYPE zcl_abap2xlsx_helper=>tt_field,
           ls_field                    TYPE zcl_abap2xlsx_helper=>ts_field,
           lv_highest_column           TYPE int4,
@@ -389,6 +388,14 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                    <lv_data_ref> TYPE data.
 
     CLEAR: ev_error_text, et_data[].
+
+    CHECK: iv_excel IS NOT INITIAL.
+    lv_excel = iv_excel.
+    do_drm_decode(
+      CHANGING
+        cv_excel = lv_excel
+    ).
+
 
     TRY.
         IF it_field IS NOT INITIAL.
@@ -416,7 +423,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         ENDLOOP.
 
         CREATE OBJECT lo_reader TYPE zcl_excel_reader_2007.
-        lo_excel = lo_reader->load( iv_excel  ). "Load data into reader
+        lo_excel = lo_reader->load( lv_excel  ). "Load data into reader
         lo_excel->set_active_sheet_index( iv_sheet_no ).
         lo_worksheet = lo_excel->get_active_worksheet( ).
 
@@ -552,10 +559,12 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
   METHOD do_drm_decode.
+* if you need to DRM decode. write code here.
   ENDMETHOD.
 
 
   METHOD do_drm_encode.
+* if you need to DRM encode. write code here.
   ENDMETHOD.
 
 
@@ -574,14 +583,9 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
     ).
 
     IF ev_error_text IS NOT INITIAL.
-      message( iv_error_text = ev_error_text ).
+      zcl_abap2xlsx_helper=>message( iv_error_text = ev_error_text ).
       RETURN.
     ENDIF.
-
-    do_drm_decode(
-      CHANGING
-        cv_excel = ev_excel
-    ).
 
     start_download(
       EXPORTING
@@ -593,24 +597,24 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
   METHOD excel_upload.
+* http://www.abap2xlsx.org
     DATA: lv_excel TYPE xstring.
+    FIELD-SYMBOLS: <lv_excel> TYPE xstring.
 
-    lv_excel = iv_excel.
 
-    IF lv_excel IS INITIAL.
-      lv_excel = start_upload( ).
+    IF iv_excel IS NOT INITIAL.
+      ASSIGN iv_excel TO <lv_excel>.
+    ELSE.
+      start_upload(
+        IMPORTING
+          ev_excel = lv_excel
+      ).
+      ASSIGN lv_excel TO <lv_excel>.
     ENDIF.
-
-    CHECK: lv_excel IS NOT INITIAL.
-
-    do_drm_decode(
-      CHANGING
-        cv_excel = lv_excel
-    ).
 
     convert_excel_to_abap(
       EXPORTING
-        iv_excel      = lv_excel
+        iv_excel      = <lv_excel>
         it_field      = it_field
         iv_begin_row  = iv_begin_row
         iv_sheet_no   = iv_sheet_no
@@ -620,7 +624,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
     ).
 
     IF ev_error_text IS NOT INITIAL.
-      message( iv_error_text = ev_error_text ).
+      zcl_abap2xlsx_helper=>message( iv_error_text = ev_error_text ).
     ENDIF.
 
   ENDMETHOD.
@@ -649,23 +653,6 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       ENDCASE.
       APPEND ls_field TO et_field.
     ENDLOOP.
-  ENDMETHOD.
-
-
-  METHOD message.
-    CHECK: iv_error_text IS NOT INITIAL.
-
-    IF wdr_task=>application IS NOT INITIAL.
-      " WD or FPM
-      wdr_task=>application->component->if_wd_controller~get_message_manager( )->report_error_message(
-        EXPORTING
-          message_text = iv_error_text
-      ).
-    ELSE.
-      " GUI
-      MESSAGE iv_error_text TYPE 'S' DISPLAY LIKE 'E'.
-    ENDIF.
-
   ENDMETHOD.
 
 
@@ -762,96 +749,99 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lv_filelength TYPE i,
           lt_temptable  TYPE w3mimetabtype.
 
+    IF wdr_task=>application_name IS NOT INITIAL.
+      RETURN.
+    ELSE.
+      cl_gui_frontend_services=>file_open_dialog(
+        EXPORTING
+*         window_title            = window_title      " Title Of File Open Dialog
+          default_extension       = 'xlsx' " Default Extension
+*         default_filename        = default_filename  " Default File Name
+          file_filter             = 'excel (*.xlsx)|*.xlsx|'       " File Extension Filter String
+*         with_encoding           = with_encoding     " File Encoding
+*         initial_directory       = initial_directory " Initial Directory
+          multiselection          = abap_false    " Multiple selections poss.
+        CHANGING
+          file_table              = lt_file_table        " Table Holding Selected Files
+          rc                      = lv_rc                " Return Code, Number of Files or -1 If Error Occurred
+*         user_action             = user_action       " User Action (See Class Constants ACTION_OK, ACTION_CANCEL)
+*         file_encoding           = file_encoding
+        EXCEPTIONS
+          file_open_dialog_failed = 1                 " "Open File" dialog failed
+          cntl_error              = 2                 " Control error
+          error_no_gui            = 3                 " No GUI available
+          not_supported_by_gui    = 4                 " GUI does not support this
+          OTHERS                  = 5
+      ).
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
 
-    cl_gui_frontend_services=>file_open_dialog(
-      EXPORTING
-*        window_title            = window_title      " Title Of File Open Dialog
-        default_extension       = 'xlsx' " Default Extension
-*        default_filename        = default_filename  " Default File Name
-        file_filter             = 'excel (*.xlsx)|*.xlsx|'       " File Extension Filter String
-*        with_encoding           = with_encoding     " File Encoding
-*        initial_directory       = initial_directory " Initial Directory
-        multiselection          = abap_false    " Multiple selections poss.
-      CHANGING
-        file_table              = lt_file_table        " Table Holding Selected Files
-        rc                      = lv_rc                " Return Code, Number of Files or -1 If Error Occurred
-*        user_action             = user_action       " User Action (See Class Constants ACTION_OK, ACTION_CANCEL)
-*        file_encoding           = file_encoding
-      EXCEPTIONS
-        file_open_dialog_failed = 1                 " "Open File" dialog failed
-        cntl_error              = 2                 " Control error
-        error_no_gui            = 3                 " No GUI available
-        not_supported_by_gui    = 4                 " GUI does not support this
-        OTHERS                  = 5
-    ).
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
+      READ TABLE lt_file_table INTO ls_file_table INDEX 1.
+      CHECK: sy-subrc EQ 0.
+      lv_filename = ls_file_table-filename.
 
-    READ TABLE lt_file_table INTO ls_file_table INDEX 1.
-    CHECK: sy-subrc EQ 0.
-    lv_filename = ls_file_table-filename.
+      cl_gui_frontend_services=>gui_upload(
+        EXPORTING
+          filename                = lv_filename              " Name of file
+          filetype                = 'BIN'              " File Type (ASCII, Binary)
+*         has_field_separator     = space              " Columns Separated by Tabs in Case of ASCII Upload
+*         header_length           = 0                  " Length of Header for Binary Data
+*         read_by_line            = 'X'                " File Written Line-By-Line to the Internal Table
+*         dat_mode                = space              " Numeric and date fields are in DAT format in WS_DOWNLOAD
+*         codepage                = codepage           " Character Representation for Output
+*         ignore_cerr             = abap_true          " Ignore character set conversion errors?
+*         replacement             = '#'                " Replacement Character for Non-Convertible Characters
+*         virus_scan_profile      = virus_scan_profile " Virus Scan Profile
+        IMPORTING
+          filelength              = lv_filelength         " File Length
+*         header                  = header             " File Header in Case of Binary Upload
+        CHANGING
+          data_tab                = lt_temptable           " Transfer table for file contents
+*         isscanperformed         = space              " File already scanned
+        EXCEPTIONS
+          file_open_error         = 1                  " File does not exist and cannot be opened
+          file_read_error         = 2                  " Error when reading file
+          no_batch                = 3                  " Cannot execute front-end function in background
+          gui_refuse_filetransfer = 4                  " Incorrect front end or error on front end
+          invalid_type            = 5                  " Incorrect parameter FILETYPE
+          no_authority            = 6                  " No upload authorization
+          unknown_error           = 7                  " Unknown error
+          bad_data_format         = 8                  " Cannot Interpret Data in File
+          header_not_allowed      = 9                  " Invalid header
+          separator_not_allowed   = 10                 " Invalid separator
+          header_too_long         = 11                 " Header information currently restricted to 1023 bytes
+          unknown_dp_error        = 12                 " Error when calling data provider
+          access_denied           = 13                 " Access to file denied.
+          dp_out_of_memory        = 14                 " Not enough memory in data provider
+          disk_full               = 15                 " Storage medium is full.
+          dp_timeout              = 16                 " Data provider timeout
+          not_supported_by_gui    = 17                 " GUI does not support this
+          error_no_gui            = 18                 " GUI not available
+          OTHERS                  = 19
+      ).
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
 
-    cl_gui_frontend_services=>gui_upload(
-      EXPORTING
-        filename                = lv_filename              " Name of file
-        filetype                = 'BIN'              " File Type (ASCII, Binary)
-*        has_field_separator     = space              " Columns Separated by Tabs in Case of ASCII Upload
-*        header_length           = 0                  " Length of Header for Binary Data
-*        read_by_line            = 'X'                " File Written Line-By-Line to the Internal Table
-*        dat_mode                = space              " Numeric and date fields are in DAT format in WS_DOWNLOAD
-*        codepage                = codepage           " Character Representation for Output
-*        ignore_cerr             = abap_true          " Ignore character set conversion errors?
-*        replacement             = '#'                " Replacement Character for Non-Convertible Characters
-*        virus_scan_profile      = virus_scan_profile " Virus Scan Profile
-      IMPORTING
-        filelength              = lv_filelength         " File Length
-*        header                  = header             " File Header in Case of Binary Upload
-      CHANGING
-        data_tab                = lt_temptable           " Transfer table for file contents
-*        isscanperformed         = space              " File already scanned
-      EXCEPTIONS
-        file_open_error         = 1                  " File does not exist and cannot be opened
-        file_read_error         = 2                  " Error when reading file
-        no_batch                = 3                  " Cannot execute front-end function in background
-        gui_refuse_filetransfer = 4                  " Incorrect front end or error on front end
-        invalid_type            = 5                  " Incorrect parameter FILETYPE
-        no_authority            = 6                  " No upload authorization
-        unknown_error           = 7                  " Unknown error
-        bad_data_format         = 8                  " Cannot Interpret Data in File
-        header_not_allowed      = 9                  " Invalid header
-        separator_not_allowed   = 10                 " Invalid separator
-        header_too_long         = 11                 " Header information currently restricted to 1023 bytes
-        unknown_dp_error        = 12                 " Error when calling data provider
-        access_denied           = 13                 " Access to file denied.
-        dp_out_of_memory        = 14                 " Not enough memory in data provider
-        disk_full               = 15                 " Storage medium is full.
-        dp_timeout              = 16                 " Data provider timeout
-        not_supported_by_gui    = 17                 " GUI does not support this
-        error_no_gui            = 18                 " GUI not available
-        OTHERS                  = 19
-    ).
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-
-    CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-      EXPORTING
-        input_length = lv_filelength
-*       first_line   = 0
-*       last_line    = 0
-      IMPORTING
-        buffer       = rv_excel
-      TABLES
-        binary_tab   = lt_temptable
-      EXCEPTIONS
-        failed       = 1
-        OTHERS       = 2.
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+        EXPORTING
+          input_length = lv_filelength
+*         first_line   = 0
+*         last_line    = 0
+        IMPORTING
+          buffer       = ev_excel
+        TABLES
+          binary_tab   = lt_temptable
+        EXCEPTIONS
+          failed       = 1
+          OTHERS       = 2.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
