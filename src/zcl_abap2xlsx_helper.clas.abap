@@ -1,94 +1,94 @@
-class ZCL_ABAP2XLSX_HELPER definition
-  public
-  create public .
+CLASS zcl_abap2xlsx_helper DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF ts_field,
+    TYPES:
+      BEGIN OF ts_field,
         fieldname    TYPE fieldname,
         label_text   TYPE scrtext_l,
         fixed_values TYPE wdr_context_attr_value_list,
       END OF ts_field .
-  types:
-    tt_field TYPE TABLE OF ts_field .
+    TYPES:
+      tt_field TYPE TABLE OF ts_field .
 
-  class-data GV_LIST_UIBB_EXPORT_ON type FLAG value ABAP_TRUE ##NO_TEXT.
+    CLASS-DATA gv_list_uibb_export_on TYPE flag VALUE abap_true ##NO_TEXT.
 
-  class-methods EXCEL_DOWNLOAD
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_FILENAME type CLIKE optional
-      !IV_SHEET_TITLE type CLIKE optional
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods EXCEL_UPLOAD
-    importing
-      !IV_EXCEL type XSTRING optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-  class-methods GET_FIELDCATALOG
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
-  class-methods CONVERT_ABAP_TO_EXCEL
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_SHEET_TITLE type CLIKE optional
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods CONVERT_EXCEL_TO_ABAP
-    importing
-      !IV_EXCEL type XSTRING
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-  class-methods TEST .
-  class-methods IS_ABAP2XLSX_INSTALLED
-    importing
-      !IV_WITH_MESSAGE type FLAG default ABAP_TRUE
-    returning
-      value(RV_INSTALLED) type FLAG .
-  class-methods MESSAGE
-    importing
-      !IV_ERROR_TEXT type CLIKE .
-  class-methods CHECK_INSTALL
-    importing
-      !IV_CLASS_NAME type CLIKE
-      !IV_ERROR_TEXT type CLIKE optional
-    returning
-      value(RV_INSTALLED) type FLAG .
-  class-methods ENH_CL_FPM_LIST_UIBB_ASSIST_AT
-    importing
-      !IV_FORMAT type FPMGB_EXPORT_FORMAT
-      !IRT_RESULT_DATA type ref to DATA
-      !IT_P13N_COLUMN type IF_FPM_LIST_SETTINGS_VARIANT=>TY_T_O_COLUMN
-      !IT_FIELD_USAGE type FPMGB_T_FIELDUSAGE .
-  class-methods ENH_CL_FPM_LIST_UIBB_RENDERER_
-    importing
-      !IO_EXPORT_BTN_CHOICE type ref to CL_WD_TOOLBAR_BTN_CHOICE
-      !IO_VIEW type ref to IF_WD_VIEW .
-protected section.
+    CLASS-METHODS excel_download
+      IMPORTING
+        !it_data              TYPE STANDARD TABLE
+        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_filename          TYPE clike OPTIONAL
+        !iv_sheet_title       TYPE clike OPTIONAL
+        !iv_auto_column_width TYPE flag DEFAULT abap_true
+        !iv_default_descr     TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel             TYPE xstring
+        !ev_error_text        TYPE string .
+    CLASS-METHODS excel_upload
+      IMPORTING
+        !iv_excel      TYPE xstring OPTIONAL
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+    CLASS-METHODS get_fieldcatalog
+      IMPORTING
+        !it_data          TYPE STANDARD TABLE
+        !iv_default_descr TYPE c DEFAULT 'L'
+      EXPORTING
+        !et_field         TYPE zcl_abap2xlsx_helper=>tt_field .
+    CLASS-METHODS convert_abap_to_excel
+      IMPORTING
+        !it_data              TYPE STANDARD TABLE
+        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_sheet_title       TYPE clike OPTIONAL
+        !iv_auto_column_width TYPE flag DEFAULT abap_true
+        !iv_default_descr     TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel             TYPE xstring
+        !ev_error_text        TYPE string .
+    CLASS-METHODS convert_excel_to_abap
+      IMPORTING
+        !iv_excel      TYPE xstring
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+    CLASS-METHODS test .
+    CLASS-METHODS is_abap2xlsx_installed
+      IMPORTING
+        !iv_with_message    TYPE flag DEFAULT abap_true
+      RETURNING
+        VALUE(rv_installed) TYPE flag .
+    CLASS-METHODS message
+      IMPORTING
+        !iv_error_text TYPE clike .
+    CLASS-METHODS check_install
+      IMPORTING
+        !iv_class_name      TYPE clike
+        !iv_error_text      TYPE clike OPTIONAL
+      RETURNING
+        VALUE(rv_installed) TYPE flag .
+    CLASS-METHODS enh_cl_fpm_list_uibb_assist_at
+      IMPORTING
+        !iv_format       TYPE fpmgb_export_format
+        !irt_result_data TYPE REF TO data
+        !it_p13n_column  TYPE if_fpm_list_settings_variant=>ty_t_o_column
+        !it_field_usage  TYPE fpmgb_t_fieldusage .
+    CLASS-METHODS enh_cl_fpm_list_uibb_renderer_
+      IMPORTING
+        !io_export_btn_choice TYPE REF TO cl_wd_toolbar_btn_choice
+        !io_view              TYPE REF TO if_wd_view .
+  PROTECTED SECTION.
 
-  class-methods README .
-private section.
+    CLASS-METHODS readme .
+  PRIVATE SECTION.
 ENDCLASS.
 
 
@@ -274,7 +274,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   METHOD excel_download.
     CHECK: is_abap2xlsx_installed( ) EQ abap_true.
     CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('EXCEL_DOWNLOAD')
-*    CALL METHOD zcl_abap2xlsx_helper_int=>excel_download(
+*    CALL METHOD zcl_abap2xlsx_helper_int=>excel_download
       EXPORTING
         it_data              = it_data
         it_field             = it_field
@@ -337,7 +337,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD MESSAGE.
+  METHOD message.
     CHECK: iv_error_text IS NOT INITIAL.
 
     IF wdr_task=>application IS NOT INITIAL.
