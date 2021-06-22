@@ -28,7 +28,7 @@
       <item>        importing</item>
       <item>          ert_result_data     = zlrt_result_data</item>
       <item>      ).</item>
-      <item>      zcl_abap2xlsx_helper=&gt;enh_cl_fpm_list_uibb_assist_at(</item>
+      <item>      zcl_abap2xlsx_helper_fpm_enh=&gt;enh_cl_fpm_list_uibb_assist_at(</item>
       <item>        EXPORTING</item>
       <item>          iv_format       = me-&gt;mv_format</item>
       <item>          irt_result_data = zlrt_result_data</item>

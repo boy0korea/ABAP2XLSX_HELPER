@@ -21,7 +21,7 @@
       <item>* additional export menu.</item>
       <item/>
       <item>    IF lo_export_btn_choice IS BOUND.</item>
-      <item>      zcl_abap2xlsx_helper=&gt;enh_cl_fpm_list_uibb_renderer_(</item>
+      <item>      zcl_abap2xlsx_helper_fpm_enh=&gt;enh_cl_fpm_list_uibb_renderer_(</item>
       <item>        EXPORTING</item>
       <item>          io_export_btn_choice = lo_export_btn_choice</item>
       <item>          io_view              = io_view</item>

@@ -4,6 +4,7 @@
   <asx:values>
    <DEVC>
     <CTEXT>abap2xlsx helper</CTEXT>
+    <SWITCH_ID>ZE_ABAP2XLSX_HELPER</SWITCH_ID>
    </DEVC>
   </asx:values>
  </asx:abap>

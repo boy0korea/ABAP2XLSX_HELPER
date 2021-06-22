@@ -1,80 +1,80 @@
-class ZCL_ABAP2XLSX_HELPER_INT definition
-  public
-  create public .
+CLASS zcl_abap2xlsx_helper_int DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  class-methods EXCEL_DOWNLOAD
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_FILENAME type CLIKE optional
-      !IV_SHEET_TITLE type CLIKE optional
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods EXCEL_UPLOAD
-    importing
-      !IV_EXCEL type XSTRING optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-  class-methods GET_FIELDCATALOG
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
-  class-methods CONVERT_ABAP_TO_EXCEL
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IV_SHEET_TITLE type CLIKE optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods CONVERT_EXCEL_TO_ABAP
-    importing
-      !IV_EXCEL type XSTRING
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-protected section.
+    CLASS-METHODS excel_download
+      IMPORTING
+        !it_data              TYPE STANDARD TABLE
+        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_filename          TYPE clike OPTIONAL
+        !iv_sheet_title       TYPE clike OPTIONAL
+        !iv_auto_column_width TYPE flag DEFAULT abap_true
+        !iv_default_descr     TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel             TYPE xstring
+        !ev_error_text        TYPE string .
+    CLASS-METHODS excel_upload
+      IMPORTING
+        !iv_excel      TYPE xstring OPTIONAL
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+    CLASS-METHODS get_fieldcatalog
+      IMPORTING
+        !it_data          TYPE STANDARD TABLE
+        !iv_default_descr TYPE c DEFAULT 'L'
+      EXPORTING
+        !et_field         TYPE zcl_abap2xlsx_helper=>tt_field .
+    CLASS-METHODS convert_abap_to_excel
+      IMPORTING
+        !it_data                 TYPE STANDARD TABLE
+        !iv_sheet_title          TYPE clike OPTIONAL
+        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
+        !iv_auto_column_width    TYPE flag DEFAULT abap_true
+        !iv_default_descr        TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel                TYPE xstring
+        !ev_error_text           TYPE string .
+    CLASS-METHODS convert_excel_to_abap
+      IMPORTING
+        !iv_excel      TYPE xstring
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+  PROTECTED SECTION.
 
-  class-methods START_DOWNLOAD
-    importing
-      !IV_EXCEL type XSTRING
-      !IV_FILENAME type CLIKE optional .
-  class-methods START_UPLOAD
-    exporting
-      !EV_EXCEL type XSTRING .
-  class-methods DO_DRM_ENCODE
-    changing
-      !CV_EXCEL type XSTRING .
-  class-methods DO_DRM_DECODE
-    changing
-      !CV_EXCEL type XSTRING .
-  class-methods ADD_FIXEDVALUE_SHEET
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
-      !IT_FIELD_CATALOG type ZEXCEL_T_FIELDCATALOG
-      !IO_EXCEL type ref to ZCL_EXCEL
-      !IV_WORKSHEET_INDEX type I default 1
-      !IV_HEADER_ROW_INDEX type I default 1
-    raising
-      ZCX_EXCEL .
+    CLASS-METHODS start_download
+      IMPORTING
+        !iv_excel    TYPE xstring
+        !iv_filename TYPE clike OPTIONAL .
+    CLASS-METHODS start_upload
+      EXPORTING
+        !ev_excel TYPE xstring .
+    CLASS-METHODS do_drm_encode
+      CHANGING
+        !cv_excel TYPE xstring .
+    CLASS-METHODS do_drm_decode
+      CHANGING
+        !cv_excel TYPE xstring .
+    CLASS-METHODS add_fixedvalue_sheet
+      IMPORTING
+        !it_data             TYPE STANDARD TABLE
+        !it_field            TYPE zcl_abap2xlsx_helper=>tt_field
+        !it_field_catalog    TYPE zexcel_t_fieldcatalog
+        !io_excel            TYPE REF TO zcl_excel
+        !iv_worksheet_index  TYPE i DEFAULT 1
+        !iv_header_row_index TYPE i DEFAULT 1
+      RAISING
+        zcx_excel .
   PRIVATE SECTION.
 ENDCLASS.
 

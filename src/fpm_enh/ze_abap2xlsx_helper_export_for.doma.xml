@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_DOMA" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <DD01V>
+    <DOMNAME>ZE_ABAP2XLSX_HELPER_EXPORT_FOR</DOMNAME>
+    <DDLANGUAGE>E</DDLANGUAGE>
+    <VALEXI>X</VALEXI>
+    <DDTEXT>ABAP2XLSX_HELPER Enhancements</DDTEXT>
+    <APPENDNAME>FPMGB_EXPORT_FORMAT</APPENDNAME>
+   </DD01V>
+   <DD07V_TAB>
+    <DD07V>
+     <DOMNAME>ZE_ABAP2XLSX_HELPER_EXPORT_FOR</DOMNAME>
+     <VALPOS>0001</VALPOS>
+     <DDLANGUAGE>E</DDLANGUAGE>
+     <DOMVALUE_L>ZA2X</DOMVALUE_L>
+     <DDTEXT>Excel by abap2xlsx</DDTEXT>
+    </DD07V>
+   </DD07V_TAB>
+  </asx:values>
+ </asx:abap>
+</abapGit>
