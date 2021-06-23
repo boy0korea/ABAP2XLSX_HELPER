@@ -4,8 +4,6 @@
   <asx:values>
    <DEVC>
     <CTEXT>abap2xlsx helper FPM enhancements</CTEXT>
-    <SWITCH_ID>ZS_A2XH_FPM_ENH</SWITCH_ID>
-    <SWITCH_SHORT_TEXT>a2xh_fpm_enh</SWITCH_SHORT_TEXT>
    </DEVC>
   </asx:values>
  </asx:abap>
