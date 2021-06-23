@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_SFBF" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <HEADER>
+    <BFUNCTION>ZBF_A2XH_FPM_ENH</BFUNCTION>
+    <VERSION>A</VERSION>
+    <COMPONENT>LOCAL</COMPONENT>
+    <S4H_OP_STATE>1</S4H_OP_STATE>
+    <S4H_PC_STATE>2</S4H_PC_STATE>
+   </HEADER>
+   <NAME32>a2xh_fpm_enh</NAME32>
+   <NAME80>a2xh_fpm_enh</NAME80>
+   <ASSIGNED_SWITCHES>
+    <SFW_SWBF_OUTTAB_LINE>
+     <BFUNCTION>ZBF_A2XH_FPM_ENH</BFUNCTION>
+     <SWITCH_ID>ZS_A2XH_FPM_ENH</SWITCH_ID>
+     <SWITCHTYPE>A</SWITCHTYPE>
+     <NAME32>a2xh_fpm_enh</NAME32>
+    </SFW_SWBF_OUTTAB_LINE>
+   </ASSIGNED_SWITCHES>
+   <PARENT_BFS>
+    <SFW_BS_BF_OUTTAB_LINE>
+     <BFUNCTION>ZBF_A2XH_FPM_ENH</BFUNCTION>
+     <VERSION>A</VERSION>
+     <BSET>ZBS_A2XH_FPM_ENH</BSET>
+     <NAME32>a2xh_fpm_enh</NAME32>
+     <OWNER>W</OWNER>
+     <TEXT_COMMENT>Assignment is defined in the superordinate BFS</TEXT_COMMENT>
+     <CELLTAB>
+      <LVC_S_STYL>
+       <STYLE>EBA=</STYLE>
+      </LVC_S_STYL>
+     </CELLTAB>
+    </SFW_BS_BF_OUTTAB_LINE>
+   </PARENT_BFS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

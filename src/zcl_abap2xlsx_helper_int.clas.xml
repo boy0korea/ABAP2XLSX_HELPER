@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>ZCL_ABAP2XLSX_HELPER_INT</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>call abap2xlsx</DESCRIPT>
+    <DESCRIPT>abap2xlsx helper internal</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

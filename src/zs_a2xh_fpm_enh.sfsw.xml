@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_SFSW" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <HEADER>
+    <SWITCH_ID>ZS_A2XH_FPM_ENH</SWITCH_ID>
+    <VERSION>A</VERSION>
+    <X_DDIC>X</X_DDIC>
+   </HEADER>
+   <NAME32>a2xh_fpm_enh</NAME32>
+   <PARENT_BF>
+    <SFW_BF_SW_OUTTAB_LINE>
+     <SWITCH_ID>ZS_A2XH_FPM_ENH</SWITCH_ID>
+     <VERSION>A</VERSION>
+     <BFUNCTION>ZBF_A2XH_FPM_ENH</BFUNCTION>
+     <OWNER>W</OWNER>
+     <TEXT_COMMENT>Assignment is defined in business function</TEXT_COMMENT>
+     <CELLTAB>
+      <LVC_S_STYL>
+       <STYLE>EBA=</STYLE>
+      </LVC_S_STYL>
+     </CELLTAB>
+    </SFW_BF_SW_OUTTAB_LINE>
+   </PARENT_BF>
+  </asx:values>
+ </asx:abap>
+</abapGit>

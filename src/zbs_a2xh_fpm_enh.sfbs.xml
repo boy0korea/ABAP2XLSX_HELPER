@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_SFBS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <HEADER>
+    <BSET>ZBS_A2XH_FPM_ENH</BSET>
+    <VERSION>A</VERSION>
+   </HEADER>
+   <NAME32>a2xh_fpm_enh</NAME32>
+   <NAME80>a2xh_fpm_enh</NAME80>
+   <ASSIGNED_BF>
+    <SFW_BFBS_OUTTAB_LINE>
+     <BSET>ZBS_A2XH_FPM_ENH</BSET>
+     <BFUNCTION>ZBF_A2XH_FPM_ENH</BFUNCTION>
+     <NAME32>a2xh_fpm_enh</NAME32>
+    </SFW_BFBS_OUTTAB_LINE>
+   </ASSIGNED_BF>
+  </asx:values>
+ </asx:abap>
+</abapGit>
