@@ -1,55 +1,79 @@
-class ZCL_ABAP2XLSX_HELPER_INT definition
-  public
-  create public .
+CLASS zcl_abap2xlsx_helper_int DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  class-methods EXCEL_DOWNLOAD
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_FILENAME type CLIKE optional
-      !IV_SHEET_TITLE type CLIKE optional
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods EXCEL_UPLOAD
-    importing
-      !IV_EXCEL type XSTRING optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
-  class-methods GET_FIELDCATALOG
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
-  class-methods CONVERT_ABAP_TO_EXCEL
-    importing
-      !IT_DATA type STANDARD TABLE
-      !IV_SHEET_TITLE type CLIKE optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
-      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
-      !IV_DEFAULT_DESCR type C default 'L'
-    exporting
-      !EV_EXCEL type XSTRING
-      !EV_ERROR_TEXT type STRING .
-  class-methods CONVERT_EXCEL_TO_ABAP
-    importing
-      !IV_EXCEL type XSTRING
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
-      !IV_BEGIN_ROW type INT4 default 2
-      !IV_SHEET_NO type INT1 default 1
-    exporting
-      !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
+    CLASS-METHODS excel_download
+      IMPORTING
+        !it_data                 TYPE STANDARD TABLE
+        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_filename             TYPE clike OPTIONAL
+        !iv_sheet_title          TYPE clike OPTIONAL
+        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
+        !iv_auto_column_width    TYPE flag DEFAULT abap_true
+        !iv_default_descr        TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel                TYPE xstring
+        !ev_error_text           TYPE string .
+    CLASS-METHODS excel_email
+      IMPORTING
+        !it_data                 TYPE STANDARD TABLE
+        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_filename             TYPE clike OPTIONAL
+        !iv_sheet_title          TYPE clike OPTIONAL
+        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
+        !iv_auto_column_width    TYPE flag DEFAULT abap_true
+        !iv_default_descr        TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel                TYPE xstring
+        !ev_error_text           TYPE string .
+    CLASS-METHODS excel_upload
+      IMPORTING
+        !iv_excel      TYPE xstring OPTIONAL
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
+    CLASS-METHODS get_fieldcatalog
+      IMPORTING
+        !it_data          TYPE STANDARD TABLE
+        !iv_default_descr TYPE c DEFAULT 'L'
+      EXPORTING
+        !et_field         TYPE zcl_abap2xlsx_helper=>tt_field .
+    CLASS-METHODS convert_abap_to_excel
+      IMPORTING
+        !it_data                 TYPE STANDARD TABLE
+        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_sheet_title          TYPE clike OPTIONAL
+        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
+        !iv_auto_column_width    TYPE flag DEFAULT abap_true
+        !iv_default_descr        TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel                TYPE xstring
+        !ev_error_text           TYPE string .
+    CLASS-METHODS convert_json_to_excel
+      IMPORTING
+        !iv_data_json            TYPE string
+        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field
+        !iv_sheet_title          TYPE clike OPTIONAL
+        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
+        !iv_auto_column_width    TYPE flag DEFAULT abap_true
+        !iv_default_descr        TYPE c DEFAULT 'L'
+      EXPORTING
+        !ev_excel                TYPE xstring
+        !ev_error_text           TYPE string .
+    CLASS-METHODS convert_excel_to_abap
+      IMPORTING
+        !iv_excel      TYPE xstring
+        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
+        !iv_begin_row  TYPE int4 DEFAULT 2
+        !iv_sheet_no   TYPE int1 DEFAULT 1
+      EXPORTING
+        !et_data       TYPE STANDARD TABLE
+        !ev_error_text TYPE string .
   PROTECTED SECTION.
 
     CLASS-METHODS start_download
@@ -89,7 +113,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lo_worksheet_fv    TYPE REF TO zcl_excel_worksheet,
           lo_data_validation TYPE REF TO zcl_excel_data_validation,
           ls_field_catalog   TYPE zexcel_s_fieldcatalog,
-          ls_field           TYPE zcl_abap2xlsx_helper=>ts_field,
+          ls_field           TYPE za2xh_s_fieldcatalog,
           lv_sheet_title_fv  TYPE zexcel_sheet_title,
           lt_comp_view       TYPE abap_component_view_tab,
           ls_comp_view       TYPE abap_simple_componentdescr,
@@ -136,18 +160,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       " 2. get from ddic domain fixed value
       IF lt_ddl IS INITIAL.
         READ TABLE lt_comp_view INTO ls_comp_view WITH KEY name = ls_field_catalog-fieldname BINARY SEARCH.
-        IF ls_comp_view-type->is_ddic_type( ) EQ abap_true.
-          lt_fixed_value = CAST cl_abap_elemdescr( ls_comp_view-type )->get_ddic_fixed_values( ).
-          READ TABLE lt_fixed_value INTO ls_fixed_value WITH KEY option = 'BT'.
-          CHECK: sy-subrc <> 0.
-          CLEAR: lt_ddl.
-          LOOP AT lt_fixed_value INTO ls_fixed_value.
-            CLEAR: ls_ddl.
-            ls_ddl-value = ls_fixed_value-low.
-            ls_ddl-text = ls_fixed_value-ddtext.
-            APPEND ls_ddl TO lt_ddl.
-          ENDLOOP.
-        ENDIF.
+        lt_ddl = zcl_abap2xlsx_helper=>get_ddic_fixed_values( ls_comp_view-type ).
       ENDIF.
 
       CHECK: lt_ddl IS NOT INITIAL.
@@ -214,7 +227,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lt_field_catalog   TYPE zexcel_t_fieldcatalog,
           lt_field_catalog2  TYPE zexcel_t_fieldcatalog,
           ls_field_catalog   TYPE zexcel_s_fieldcatalog,
-          ls_field           TYPE zcl_abap2xlsx_helper=>ts_field,
+          ls_field           TYPE za2xh_s_fieldcatalog,
           lo_zcx_excel       TYPE REF TO zcx_excel,
           lv_sheet_title     TYPE zexcel_sheet_title,
           lt_ddic_object     TYPE dd_x031l_table,
@@ -261,6 +274,9 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
             ls_field_catalog-dynpfld = abap_true.
             IF ls_field-label_text IS NOT INITIAL.
               ls_field_catalog-scrtext_s = ls_field_catalog-scrtext_m = ls_field_catalog-scrtext_l = ls_field-label_text.
+            ENDIF.
+            IF ls_field-abap_type IS NOT INITIAL.
+              ls_field_catalog-abap_type = ls_field-abap_type.
             ENDIF.
             APPEND ls_field_catalog TO lt_field_catalog.
           ENDLOOP.
@@ -363,8 +379,8 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lo_reader                   TYPE REF TO zif_excel_reader,
           lo_worksheet                TYPE REF TO zcl_excel_worksheet,
           lv_excel                    TYPE xstring,
-          lt_field                    TYPE zcl_abap2xlsx_helper=>tt_field,
-          ls_field                    TYPE zcl_abap2xlsx_helper=>ts_field,
+          lt_field                    TYPE za2xh_t_fieldcatalog,
+          ls_field                    TYPE za2xh_s_fieldcatalog,
           lv_highest_column           TYPE int4,
           lv_highest_row              TYPE int4,
           lv_column                   TYPE int4,
@@ -558,6 +574,48 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD convert_json_to_excel.
+* http://www.abap2xlsx.org
+    DATA: ls_field    TYPE za2xh_s_fieldcatalog,
+          lt_comp     TYPE abap_component_tab,
+          ls_comp     TYPE abap_componentdescr,
+          lo_tab_type TYPE REF TO cl_abap_tabledescr,
+          lr_data     TYPE REF TO data.
+    FIELD-SYMBOLS: <lt_data> TYPE table.
+
+    " json to table
+    LOOP AT it_field INTO ls_field.
+      ls_comp-name = ls_field-fieldname.
+      ls_comp-type = cl_abap_elemdescr=>get_string( ).
+      APPEND ls_comp TO lt_comp.
+    ENDLOOP.
+    lo_tab_type = cl_abap_tabledescr=>create( cl_abap_structdescr=>create( lt_comp ) ).
+    CREATE DATA lr_data TYPE HANDLE lo_tab_type.
+    ASSIGN lr_data->* TO <lt_data>.
+
+    /ui2/cl_json=>deserialize(
+      EXPORTING
+        json             = iv_data_json
+      CHANGING
+        data             = <lt_data>
+    ).
+
+    " table to excel
+    convert_abap_to_excel(
+      EXPORTING
+        it_data                 = <lt_data>
+        iv_sheet_title          = iv_sheet_title
+        it_field                = it_field
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr
+      IMPORTING
+        ev_excel                = ev_excel
+        ev_error_text           = ev_error_text
+    ).
+  ENDMETHOD.
+
+
   METHOD do_drm_decode.
 * if you need to DRM decode. write code here.
   ENDMETHOD.
@@ -593,6 +651,48 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         iv_filename = iv_filename
     ).
 
+  ENDMETHOD.
+
+
+  METHOD excel_email.
+* http://www.abap2xlsx.org
+    IF 1 EQ 2.
+      CALL FUNCTION 'ZA2XH_EMAIL'.
+    ENDIF.
+
+    IF wdr_task=>application IS NOT INITIAL.
+      " WD or FPM
+      DATA: lv_component_name       TYPE string,
+            lv_component_usage_name TYPE string.
+
+      lv_component_name = 'ZMDCMW_NOTICE'.
+      lv_component_usage_name = lv_component_name.
+
+* 컴포넌트 컨트롤러 get
+      DATA lo_comp_usage TYPE REF TO if_wd_component_usage.
+
+      cl_wdr_runtime_services=>get_component_usage(
+        EXPORTING
+          component            = wdr_task=>application->component
+          used_component_name  = lv_component_name
+          component_usage_name = lv_component_usage_name
+          create_component     = abap_true
+          do_create            = abap_true
+        RECEIVING
+          component_usage      = lo_comp_usage
+      ).
+
+** call
+*      DATA: lo_comp TYPE REF TO ziwci_mdcmw_notice.
+*      lo_comp ?= lo_comp_usage->get_interface_controller( ).
+*      lo_comp->open_popup(
+*        EXPORTING
+*          is_ztmdcm0002 = is_ztmdcm0002
+*      ).
+
+    ELSE.
+      " GUI
+    ENDIF.
   ENDMETHOD.
 
 
@@ -634,7 +734,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 * http://www.abap2xlsx.org
     DATA: lt_fc    TYPE zexcel_t_fieldcatalog,
           ls_fc    TYPE zexcel_s_fieldcatalog,
-          ls_field TYPE zcl_abap2xlsx_helper=>ts_field.
+          ls_field TYPE za2xh_s_fieldcatalog.
 
     lt_fc = zcl_excel_common=>get_fieldcatalog( ip_table = it_data ).
     DELETE lt_fc WHERE dynpfld NE abap_true.
@@ -651,6 +751,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         WHEN OTHERS.
           CLEAR: ls_field-label_text.
       ENDCASE.
+      ls_field-abap_type = ls_fc-abap_type.
       APPEND ls_field TO et_field.
     ENDLOOP.
   ENDMETHOD.
@@ -664,17 +765,21 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lt_temptable         TYPE w3mimetabtype.
 
 
-    lv_filename_string = iv_filename.
-    IF iv_filename IS INITIAL.
-      lv_filename_string = |export_{ sy-datum }_{ sy-uzeit }.xlsx|.
+    IF iv_filename IS NOT INITIAL.
+      lv_filename_string = iv_filename.
+    ELSE.
+      lv_filename_string = zcl_abap2xlsx_helper=>default_excel_filename( ).
     ENDIF.
-    IF wdr_task=>application_name IS NOT INITIAL.
+
+    IF wdr_task=>application IS NOT INITIAL.
+      " WD or FPM
       CALL METHOD cl_wd_runtime_services=>attach_file_to_response
         EXPORTING
           i_filename  = lv_filename_string
           i_content   = iv_excel
           i_mime_type = 'xlsx'.
     ELSE.
+      " GUI
       CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
         EXPORTING
           buffer        = iv_excel
@@ -749,9 +854,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lv_filelength TYPE i,
           lt_temptable  TYPE w3mimetabtype.
 
-    IF wdr_task=>application_name IS NOT INITIAL.
+    IF wdr_task=>application IS NOT INITIAL.
+      " WD or FPM
       RETURN.
     ELSE.
+      " GUI
       cl_gui_frontend_services=>file_open_dialog(
         EXPORTING
 *         window_title            = window_title      " Title Of File Open Dialog

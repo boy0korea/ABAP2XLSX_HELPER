@@ -21,14 +21,14 @@
       <item>* additional export menu.</item>
       <item>    DATA: zlrt_result_data TYPE REF TO data.</item>
       <item/>
-      <item>    IF me-&gt;mv_format EQ &apos;ZA2X&apos;.</item>
+      <item>    IF me-&gt;mv_format CP &apos;Z*&apos;.</item>
       <item>      me-&gt;get_result_data(</item>
-      <item>        exporting</item>
+      <item>        EXPORTING</item>
       <item>          iv_data_only        = abap_true</item>
-      <item>        importing</item>
+      <item>        IMPORTING</item>
       <item>          ert_result_data     = zlrt_result_data</item>
       <item>      ).</item>
-      <item>      zcl_abap2xlsx_helper_fpm_enh=&gt;enh_cl_fpm_list_uibb_assist_at(</item>
+      <item>      zcl_a2xh_fpm_enh=&gt;enh_cl_fpm_list_uibb_assist_at(</item>
       <item>        EXPORTING</item>
       <item>          iv_format       = me-&gt;mv_format</item>
       <item>          irt_result_data = zlrt_result_data</item>
@@ -37,20 +37,21 @@
       <item>      ).</item>
       <item>      RETURN.</item>
       <item>    ENDIF.</item>
+      <item/>
      </SOURCE>
     </ENH_HOOK_IMPL>
    </ENHANCEMENTS>
    <SOTR>
     <item>
      <HEADER>
-      <CONCEPT>E04F4306E0601EDBB3A440ED44FF086A</CONCEPT>
+      <CONCEPT>E04F4306E0601EDBB4FCC8E76D775644</CONCEPT>
       <CREA_LAN>E</CREA_LAN>
       <TRALA_TYPE>1</TRALA_TYPE>
       <OBJID_VEC>AAI=</OBJID_VEC>
      </HEADER>
      <ENTRIES>
       <SOTR_TEXT>
-       <CONCEPT>E04F4306E0601EDBB3A440ED44FF086A</CONCEPT>
+       <CONCEPT>E04F4306E0601EDBB4FCC8E76D775644</CONCEPT>
        <LANGU>E</LANGU>
        <LFD_NUM>0001</LFD_NUM>
        <FLAG_CNTXT>X</FLAG_CNTXT>
@@ -65,8 +66,8 @@
     <SOTR_USE>
      <PGMID>R3TR</PGMID>
      <OBJECT>ENHO</OBJECT>
-     <OBJ_NAME>ZE_ABAP2XLSX_HELPER_LIST_ASSIS</OBJ_NAME>
-     <CONCEPT>E04F4306E0601EDBB3A440ED44FF086A</CONCEPT>
+     <OBJ_NAME>ZE_A2XH_CL_FPM_LIST_UIBB_ASSIS</OBJ_NAME>
+     <CONCEPT>E04F4306E0601EDBB4FCC8E76D775644</CONCEPT>
      <LFD_NUM>0001</LFD_NUM>
     </SOTR_USE>
    </SOTR_USE>

@@ -1,78 +1,100 @@
-CLASS zcl_abap2xlsx_helper DEFINITION
-  PUBLIC
-  CREATE PUBLIC .
+class ZCL_ABAP2XLSX_HELPER definition
+  public
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    TYPES:
-      BEGIN OF ts_field,
+  types:
+    BEGIN OF ts_field,
         fieldname    TYPE fieldname,
         label_text   TYPE scrtext_l,
         fixed_values TYPE wdr_context_attr_value_list,
+        abap_type    TYPE inttype,
       END OF ts_field .
-    TYPES:
-      tt_field TYPE TABLE OF ts_field .
+  types:
+    tt_field TYPE TABLE OF ts_field .
 
-    CLASS-METHODS excel_download
-      IMPORTING
-        !it_data              TYPE STANDARD TABLE
-        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_filename          TYPE clike OPTIONAL
-        !iv_sheet_title       TYPE clike OPTIONAL
-        !iv_auto_column_width TYPE flag DEFAULT abap_true
-        !iv_default_descr     TYPE c DEFAULT 'L'
-      EXPORTING
-        !ev_excel             TYPE xstring
-        !ev_error_text        TYPE string .
-    CLASS-METHODS excel_upload
-      IMPORTING
-        !iv_excel      TYPE xstring OPTIONAL
-        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_begin_row  TYPE int4 DEFAULT 2
-        !iv_sheet_no   TYPE int1 DEFAULT 1
-      EXPORTING
-        !et_data       TYPE STANDARD TABLE
-        !ev_error_text TYPE string .
-    CLASS-METHODS get_fieldcatalog
-      IMPORTING
-        !it_data          TYPE STANDARD TABLE
-        !iv_default_descr TYPE c DEFAULT 'L'
-      EXPORTING
-        !et_field         TYPE zcl_abap2xlsx_helper=>tt_field .
-    CLASS-METHODS convert_abap_to_excel
-      IMPORTING
-        !it_data              TYPE STANDARD TABLE
-        !it_field             TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_sheet_title       TYPE clike OPTIONAL
-        !iv_auto_column_width TYPE flag DEFAULT abap_true
-        !iv_default_descr     TYPE c DEFAULT 'L'
-      EXPORTING
-        !ev_excel             TYPE xstring
-        !ev_error_text        TYPE string .
-    CLASS-METHODS convert_excel_to_abap
-      IMPORTING
-        !iv_excel      TYPE xstring
-        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_begin_row  TYPE int4 DEFAULT 2
-        !iv_sheet_no   TYPE int1 DEFAULT 1
-      EXPORTING
-        !et_data       TYPE STANDARD TABLE
-        !ev_error_text TYPE string .
-    CLASS-METHODS test .
-    CLASS-METHODS is_abap2xlsx_installed
-      IMPORTING
-        !iv_with_message    TYPE flag DEFAULT abap_true
-      RETURNING
-        VALUE(rv_installed) TYPE flag .
-    CLASS-METHODS message
-      IMPORTING
-        !iv_error_text TYPE clike .
-    CLASS-METHODS check_install
-      IMPORTING
-        !iv_class_name      TYPE clike
-        !iv_error_text      TYPE clike OPTIONAL
-      RETURNING
-        VALUE(rv_installed) TYPE flag .
+  class-methods EXCEL_DOWNLOAD
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_FILENAME type CLIKE optional
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !EV_EXCEL type XSTRING
+      !EV_ERROR_TEXT type STRING .
+  class-methods EXCEL_UPLOAD
+    importing
+      !IV_EXCEL type XSTRING optional
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_BEGIN_ROW type INT4 default 2
+      !IV_SHEET_NO type INT1 default 1
+    exporting
+      !ET_DATA type STANDARD TABLE
+      !EV_ERROR_TEXT type STRING .
+  class-methods GET_FIELDCATALOG
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
+  class-methods CONVERT_ABAP_TO_EXCEL
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !EV_EXCEL type XSTRING
+      !EV_ERROR_TEXT type STRING .
+  class-methods CONVERT_JSON_TO_EXCEL
+    importing
+      !IV_DATA_JSON type STRING
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !EV_EXCEL type XSTRING
+      !EV_ERROR_TEXT type STRING .
+  class-methods CONVERT_EXCEL_TO_ABAP
+    importing
+      !IV_EXCEL type XSTRING
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_BEGIN_ROW type INT4 default 2
+      !IV_SHEET_NO type INT1 default 1
+    exporting
+      !ET_DATA type STANDARD TABLE
+      !EV_ERROR_TEXT type STRING .
+  class-methods DEFAULT_EXCEL_FILENAME
+    returning
+      value(RV_FILENAME) type STRING .
+  class-methods GET_DDIC_FIXED_VALUES
+    importing
+      !IO_TYPE type ref to CL_ABAP_TYPEDESCR
+    returning
+      value(RT_DDL) type WDR_CONTEXT_ATTR_VALUE_LIST .
+  class-methods TEST .
+  class-methods IS_ABAP2XLSX_INSTALLED
+    importing
+      !IV_WITH_MESSAGE type FLAG default ABAP_TRUE
+    returning
+      value(RV_INSTALLED) type FLAG .
+  class-methods MESSAGE
+    importing
+      !IV_ERROR_TEXT type CLIKE .
+  class-methods CHECK_INSTALL
+    importing
+      !IV_CLASS_NAME type CLIKE
+      !IV_ERROR_TEXT type CLIKE optional
+    returning
+      value(RV_INSTALLED) type FLAG .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
@@ -109,14 +131,15 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
     CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('CONVERT_ABAP_TO_EXCEL')
 *    CALL METHOD zcl_abap2xlsx_helper_int=>convert_abap_to_excel
       EXPORTING
-        it_data              = it_data
-        it_field             = it_field
-        iv_sheet_title       = iv_sheet_title
-        iv_auto_column_width = iv_auto_column_width
-        iv_default_descr     = iv_default_descr
+        it_data                 = it_data
+        it_field                = it_field
+        iv_sheet_title          = iv_sheet_title
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr
       IMPORTING
-        ev_excel             = ev_excel
-        ev_error_text        = ev_error_text.
+        ev_excel                = ev_excel
+        ev_error_text           = ev_error_text.
   ENDMETHOD.
 
 
@@ -135,20 +158,43 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD convert_json_to_excel.
+    CHECK: is_abap2xlsx_installed( ) EQ abap_true.
+    CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('CONVERT_JSON_TO_EXCEL')
+*    CALL METHOD zcl_abap2xlsx_helper_int=>convert_json_to_excel
+      EXPORTING
+        iv_data_json            = iv_data_json
+        it_field                = it_field
+        iv_sheet_title          = iv_sheet_title
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr
+      IMPORTING
+        ev_excel                = ev_excel
+        ev_error_text           = ev_error_text.
+  ENDMETHOD.
+
+
+  METHOD default_excel_filename.
+    rv_filename = |{ sy-uname }_{ sy-datum }_{ sy-uzeit }.xlsx|.
+  ENDMETHOD.
+
+
   METHOD excel_download.
     CHECK: is_abap2xlsx_installed( ) EQ abap_true.
     CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('EXCEL_DOWNLOAD')
 *    CALL METHOD zcl_abap2xlsx_helper_int=>excel_download
       EXPORTING
-        it_data              = it_data
-        it_field             = it_field
-        iv_filename          = iv_filename
-        iv_sheet_title       = iv_sheet_title
-        iv_auto_column_width = iv_auto_column_width
-        iv_default_descr     = iv_default_descr
+        it_data                 = it_data
+        it_field                = it_field
+        iv_filename             = iv_filename
+        iv_sheet_title          = iv_sheet_title
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr
       IMPORTING
-        ev_excel             = ev_excel
-        ev_error_text        = ev_error_text.
+        ev_excel                = ev_excel
+        ev_error_text           = ev_error_text.
   ENDMETHOD.
 
 
@@ -164,6 +210,34 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
       IMPORTING
         et_data       = et_data
         ev_error_text = ev_error_text.
+  ENDMETHOD.
+
+
+  METHOD get_ddic_fixed_values.
+    DATA: lt_fixed_value TYPE ddfixvalues,
+          ls_fixed_value TYPE ddfixvalue,
+          ls_ddl         TYPE wdr_context_attr_value.
+
+    IF io_type IS INSTANCE OF cl_abap_elemdescr.
+      CAST cl_abap_elemdescr( io_type )->get_ddic_fixed_values(
+*          EXPORTING
+*            p_langu        = SY-LANGU       " Current Language
+        RECEIVING
+          p_fixed_values = lt_fixed_value " Defaults
+        EXCEPTIONS
+          not_found      = 1              " Type could not be found
+          no_ddic_type   = 2              " Typ is not a dictionary type
+          OTHERS         = 3
+      ).
+
+      LOOP AT lt_fixed_value INTO ls_fixed_value WHERE option = 'EQ'.
+        CLEAR: ls_ddl.
+        ls_ddl-value = ls_fixed_value-low.
+        ls_ddl-text = ls_fixed_value-ddtext.
+        APPEND ls_ddl TO rt_ddl.
+      ENDLOOP.
+    ENDIF.
+
   ENDMETHOD.
 
 

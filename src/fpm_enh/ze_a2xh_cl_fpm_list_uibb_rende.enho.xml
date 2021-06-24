@@ -21,10 +21,9 @@
       <item>* additional export menu.</item>
       <item/>
       <item>    IF lo_export_btn_choice IS BOUND.</item>
-      <item>      zcl_abap2xlsx_helper_fpm_enh=&gt;enh_cl_fpm_list_uibb_renderer_(</item>
+      <item>      zcl_a2xh_fpm_enh=&gt;enh_cl_fpm_list_uibb_renderer_(</item>
       <item>        EXPORTING</item>
       <item>          io_export_btn_choice = lo_export_btn_choice</item>
-      <item>          io_view              = io_view</item>
       <item>      ).</item>
       <item>    ENDIF.</item>
       <item/>
@@ -34,14 +33,14 @@
    <SOTR>
     <item>
      <HEADER>
-      <CONCEPT>E04F4306E0601EDBB3A429D5007A880C</CONCEPT>
+      <CONCEPT>E04F4306E0601EDBB4FCD63F7EDE9656</CONCEPT>
       <CREA_LAN>E</CREA_LAN>
       <TRALA_TYPE>1</TRALA_TYPE>
       <OBJID_VEC>AAI=</OBJID_VEC>
      </HEADER>
      <ENTRIES>
       <SOTR_TEXT>
-       <CONCEPT>E04F4306E0601EDBB3A429D5007A880C</CONCEPT>
+       <CONCEPT>E04F4306E0601EDBB4FCD63F7EDE9656</CONCEPT>
        <LANGU>E</LANGU>
        <LFD_NUM>0001</LFD_NUM>
        <FLAG_CNTXT>X</FLAG_CNTXT>
@@ -56,8 +55,8 @@
     <SOTR_USE>
      <PGMID>R3TR</PGMID>
      <OBJECT>ENHO</OBJECT>
-     <OBJ_NAME>ZE_ABAP2XLSX_HELPER_LIST_RENDE</OBJ_NAME>
-     <CONCEPT>E04F4306E0601EDBB3A429D5007A880C</CONCEPT>
+     <OBJ_NAME>ZE_A2XH_CL_FPM_LIST_UIBB_RENDE</OBJ_NAME>
+     <CONCEPT>E04F4306E0601EDBB4FCD63F7EDE9656</CONCEPT>
      <LFD_NUM>0001</LFD_NUM>
     </SOTR_USE>
    </SOTR_USE>
