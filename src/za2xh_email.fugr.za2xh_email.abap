@@ -65,6 +65,7 @@ FUNCTION za2xh_email.
 
 
 
+  CHECK: lt_comp IS NOT INITIAL.
   lo_tab_type = cl_abap_tabledescr=>create( cl_abap_structdescr=>create( lt_comp ) ).
   CREATE DATA lr_data TYPE HANDLE lo_tab_type.
   ASSIGN lr_data->* TO <lt_table>.
