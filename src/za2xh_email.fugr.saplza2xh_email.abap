@@ -13,3 +13,9 @@
 * INCLUDE LZA2XH_EMAILE...                   " Events
 * INCLUDE LZA2XH_EMAILP...                   " Local class implement.
 * INCLUDE LZA2XH_EMAILT99.                   " ABAP Unit tests
+
+INCLUDE lza2xh_emailo01.
+
+INCLUDE lza2xh_emaili01.
+
+INCLUDE lza2xh_emailf01.

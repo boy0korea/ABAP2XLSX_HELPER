@@ -11,6 +11,9 @@ public section.
   methods ON_OK
     importing
       !IO_PARAM type ref to IF_FPM_PARAMETER .
+  class-methods GET_DEFAULT_RECEIVER
+    returning
+      value(RT_RECEIVER) type STRINGTAB .
 protected section.
 private section.
 ENDCLASS.
@@ -18,6 +21,26 @@ ENDCLASS.
 
 
 CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
+
+
+  METHOD get_default_receiver.
+    DATA: lv_my_email    TYPE string,
+          lt_error_table TYPE TABLE OF rpbenerr.
+
+    CALL FUNCTION 'HR_FBN_GET_USER_EMAIL_ADDRESS'
+      EXPORTING
+        user_id       = sy-uname
+        reaction      = 'N'
+      IMPORTING
+        email_address = lv_my_email
+*       subrc         = subrc         " Return Value, Return Value After ABAP Statements
+      TABLES
+        error_table   = lt_error_table.   " Benefit structure for error table
+
+    IF lv_my_email IS NOT INITIAL.
+      APPEND lv_my_email TO rt_receiver.
+    ENDIF.
+  ENDMETHOD.
 
 
   METHOD on_ok.

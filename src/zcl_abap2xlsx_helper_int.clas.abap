@@ -656,42 +656,75 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
   METHOD excel_email.
 * http://www.abap2xlsx.org
-    IF 1 EQ 2.
-      CALL FUNCTION 'ZA2XH_EMAIL'.
-    ENDIF.
+    DATA: lt_receiver TYPE TABLE OF string,
+          lo_param    TYPE REF TO if_fpm_parameter.
+
+    lt_receiver = zcl_a2xh_email_popup=>get_default_receiver( ).
+
 
     IF wdr_task=>application IS NOT INITIAL.
       " WD or FPM
-      DATA: lv_component_name       TYPE string,
-            lv_component_usage_name TYPE string.
+      lo_param = NEW cl_fpm_parameter( ).
 
-      lv_component_name = 'ZMDCMW_NOTICE'.
-      lv_component_usage_name = lv_component_name.
-
-* 컴포넌트 컨트롤러 get
-      DATA lo_comp_usage TYPE REF TO if_wd_component_usage.
-
-      cl_wdr_runtime_services=>get_component_usage(
+      lo_param->set_value(
         EXPORTING
-          component            = wdr_task=>application->component
-          used_component_name  = lv_component_name
-          component_usage_name = lv_component_usage_name
-          create_component     = abap_true
-          do_create            = abap_true
-        RECEIVING
-          component_usage      = lo_comp_usage
+          iv_key   = 'IT_RECEIVER'
+          iv_value = lt_receiver
       ).
 
-** call
-*      DATA: lo_comp TYPE REF TO ziwci_mdcmw_notice.
-*      lo_comp ?= lo_comp_usage->get_interface_controller( ).
-*      lo_comp->open_popup(
-*        EXPORTING
-*          is_ztmdcm0002 = is_ztmdcm0002
-*      ).
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IT_DATA'
+          iv_value = it_data
+      ).
+
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IT_FIELD'
+          iv_value = it_field
+      ).
+
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IV_FILENAME'
+          iv_value = iv_filename
+      ).
+
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IV_SHEET_TITLE'
+          iv_value = iv_sheet_title
+      ).
+
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IV_ADD_FIXEDVALUE_SHEET'
+          iv_value = iv_add_fixedvalue_sheet
+      ).
+
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IV_ADD_FIXEDVALUE_SHEET'
+          iv_value = iv_auto_column_width
+      ).
+
+      lo_param->set_value(
+        EXPORTING
+          iv_key   = 'IV_DEFAULT_DESCR'
+          iv_value = iv_default_descr
+      ).
+
+      " open poup
+      zcl_a2xh_email_popup=>open_popup( io_param = lo_param ).
+
+      IF 1 EQ 2.
+        " ok click on popup
+        NEW zcl_a2xh_email_popup( )->on_ok( io_param = lo_param ).
+      ENDIF.
 
     ELSE.
       " GUI
+      CALL FUNCTION 'ZA2XH_EMAIL_POPUP_GUI'.
     ENDIF.
   ENDMETHOD.
 
