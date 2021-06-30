@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_SUSH" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <HEAD>
+    <NAME>ZA2XH_EMAIL_RFC</NAME>
+    <TYPE>RF</TYPE>
+    <DISPLAY_NAME>ZA2XH_EMAIL_RFC</DISPLAY_NAME>
+    <STEXT>abap2xlsx helper send email function</STEXT>
+    <MODIFIER>X8272</MODIFIER>
+    <MODDATE>2021-06-28</MODDATE>
+    <MODTIME>16:53:11</MODTIME>
+    <SRCSYSTEM>CSD</SRCSYSTEM>
+    <AUTHOR>X8272</AUTHOR>
+    <DEVCLASS>$ABAP2XLSX_HELPER</DEVCLASS>
+   </HEAD>
+   <USOBX>
+    <USOBX>
+     <NAME>ZA2XH_EMAIL_RFC</NAME>
+     <TYPE>RF</TYPE>
+     <OBJECT>S_RFC</OBJECT>
+     <MODIFIER>X8272</MODIFIER>
+     <MODDATE>2021-06-28</MODDATE>
+     <MODTIME>16:53:11</MODTIME>
+     <OKFLAG>X</OKFLAG>
+    </USOBX>
+   </USOBX>
+   <USOBX_EXT>
+    <item>
+     <OBJECT>S_RFC</OBJECT>
+     <TTEXT>Authorization Check for RFC Access</TTEXT>
+     <OCLSS>AAAB</OCLSS>
+     <MODIFIER>X8272</MODIFIER>
+     <MODDATE>2021-06-28</MODDATE>
+     <MODTIME>16:53:11</MODTIME>
+     <OKFLAG>X</OKFLAG>
+     <DEVCLASS>SRCX</DEVCLASS>
+     <PS_POSID>BC-MID-RFC</PS_POSID>
+     <CI_TEXT>Check</CI_TEXT>
+     <CH_TEXT>Check</CH_TEXT>
+     <PR_TEXT>No</PR_TEXT>
+     <EXCEP>3</EXCEP>
+     <EXCEP_TX>Okay</EXCEP_TX>
+     <EXCEP_ICON>@08@</EXCEP_ICON>
+    </item>
+   </USOBX_EXT>
+  </asx:values>
+ </asx:abap>
+</abapGit>

@@ -3,6 +3,7 @@ FUNCTION za2xh_email_rfc.
 *"*"Local Interface:
 *"  IMPORTING
 *"     VALUE(IV_DATA_JSON) TYPE  STRING
+*"     VALUE(IT_DDIC_OBJECT) TYPE  DD_X031L_TABLE
 *"     VALUE(IT_FIELD) TYPE  ZA2XH_T_FIELDCATALOG
 *"     VALUE(IV_FILENAME) TYPE  STRING OPTIONAL
 *"     VALUE(IV_SUBJECT) TYPE  STRING OPTIONAL
@@ -25,6 +26,7 @@ FUNCTION za2xh_email_rfc.
   zcl_abap2xlsx_helper=>convert_json_to_excel(
     EXPORTING
       iv_data_json            = iv_data_json
+      it_ddic_object          = it_ddic_object
       it_field                = it_field
 *      iv_sheet_title          = iv_sheet_title
 *      iv_add_fixedvalue_sheet = abap_true      " fixed value sheet

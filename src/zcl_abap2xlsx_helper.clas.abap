@@ -9,7 +9,6 @@ public section.
         fieldname    TYPE fieldname,
         label_text   TYPE scrtext_l,
         fixed_values TYPE wdr_context_attr_value_list,
-        abap_type    TYPE inttype,
       END OF ts_field .
   types:
     tt_field TYPE TABLE OF ts_field .
@@ -26,6 +25,15 @@ public section.
     exporting
       !EV_EXCEL type XSTRING
       !EV_ERROR_TEXT type STRING .
+  class-methods EXCEL_EMAIL
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_FILENAME type CLIKE optional
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L' .
   class-methods EXCEL_UPLOAD
     importing
       !IV_EXCEL type XSTRING optional
@@ -55,6 +63,7 @@ public section.
   class-methods CONVERT_JSON_TO_EXCEL
     importing
       !IV_DATA_JSON type STRING
+      !IT_DDIC_OBJECT type DD_X031L_TABLE
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
       !IV_SHEET_TITLE type CLIKE optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
@@ -72,6 +81,9 @@ public section.
     exporting
       !ET_DATA type STANDARD TABLE
       !EV_ERROR_TEXT type STRING .
+  class-methods FPM_UPLOAD_POPUP
+    importing
+      !IV_CALLBACK_EVENT_ID type FPM_EVENT_ID default 'ZA2XH_UPLOAD' .
   class-methods DEFAULT_EXCEL_FILENAME
     returning
       value(RV_FILENAME) type STRING .
@@ -164,6 +176,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
 *    CALL METHOD zcl_abap2xlsx_helper_int=>convert_json_to_excel
       EXPORTING
         iv_data_json            = iv_data_json
+        it_ddic_object          = it_ddic_object
         it_field                = it_field
         iv_sheet_title          = iv_sheet_title
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
@@ -357,6 +370,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         ev_excel = lv_xstring
     ).
 
+
     zcl_abap2xlsx_helper=>excel_upload(
       EXPORTING
         iv_excel     = lv_xstring
@@ -369,5 +383,43 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
     IF lt_sflight <> lt_sflight2.
       BREAK-POINT.
     ENDIF.
+
+
+    zcl_abap2xlsx_helper=>excel_email(
+      EXPORTING
+        it_data                 = lt_sflight
+        it_field                = lt_field
+    ).
+
+  ENDMETHOD.
+
+
+  METHOD excel_email.
+    CHECK: is_abap2xlsx_installed( ) EQ abap_true.
+    CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('EXCEL_EMAIL')
+*    CALL METHOD zcl_abap2xlsx_helper_int=>excel_email
+      EXPORTING
+        it_data                 = it_data
+        it_field                = it_field
+        iv_filename             = iv_filename
+        iv_sheet_title          = iv_sheet_title
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr.
+  ENDMETHOD.
+
+
+  METHOD fpm_upload_popup.
+    DATA: lo_param TYPE REF TO if_fpm_parameter.
+
+    CREATE OBJECT lo_param TYPE cl_fpm_parameter.
+
+    lo_param->set_value(
+      EXPORTING
+        iv_key   = 'IV_CALLBACK_EVENT_ID'
+        iv_value = iv_callback_event_id
+    ).
+
+    zcl_a2xh_upload_popup=>open_popup( lo_param ).
   ENDMETHOD.
 ENDCLASS.

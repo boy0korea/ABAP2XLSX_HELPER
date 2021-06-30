@@ -20,9 +20,11 @@ FUNCTION za2xh_email.
         ls_comp            TYPE abap_componentdescr,
         lt_comp            TYPE abap_component_tab,
         lo_tab_type        TYPE REF TO cl_abap_tabledescr,
+        lo_struc_type      TYPE REF TO cl_abap_structdescr,
         lv_data_json       TYPE string,
         lt_comp_view       TYPE abap_component_view_tab,
         ls_comp_view       TYPE abap_simple_componentdescr,
+        lt_ddic_object     TYPE dd_x031l_table,
         lv_index           TYPE i.
 *  CLEAR ev_error_text.
   FIELD-SYMBOLS: <lt_table>       TYPE table,
@@ -42,7 +44,9 @@ FUNCTION za2xh_email.
   ENDIF.
 
   lo_tab_type ?= cl_abap_tabledescr=>describe_by_data( it_data ).
-  lt_comp_view = CAST cl_abap_structdescr( lo_tab_type->get_table_line_type( ) )->get_included_view( ).
+  lo_struc_type ?= lo_tab_type->get_table_line_type( ).
+  lt_ddic_object = lo_struc_type->get_ddic_object( ).
+  lt_comp_view = lo_struc_type->get_included_view( ).
   SORT lt_comp_view BY name.
   LOOP AT lt_field ASSIGNING <ls_field>.
     READ TABLE lt_comp_view INTO ls_comp_view WITH KEY name = <ls_field>-fieldname BINARY SEARCH.
@@ -53,9 +57,6 @@ FUNCTION za2xh_email.
 
     IF <ls_field>-fixed_values IS INITIAL.
       <ls_field>-fixed_values = zcl_abap2xlsx_helper=>get_ddic_fixed_values( ls_comp_view-type ).
-    ENDIF.
-    IF <ls_field>-abap_type IS INITIAL.
-      <ls_field>-abap_type = ls_comp_view-type->type_kind.
     ENDIF.
 
     ls_comp-name = <ls_field>-fieldname.
@@ -107,12 +108,13 @@ FUNCTION za2xh_email.
     CALL FUNCTION 'ZA2XH_EMAIL_RFC'
       IN BACKGROUND TASK AS SEPARATE UNIT
       EXPORTING
-        iv_data_json = lv_data_json
-        it_field     = lt_field
-        iv_filename  = iv_filename
-        iv_subject   = iv_subject
-        iv_sender    = iv_sender
-        it_receiver  = it_receiver.
+        iv_data_json   = lv_data_json
+        it_ddic_object = lt_ddic_object
+        it_field       = lt_field
+        iv_filename    = iv_filename
+        iv_subject     = iv_subject
+        iv_sender      = iv_sender
+        it_receiver    = it_receiver.
 
     lv_from = lv_from + lv_parti.
   ENDWHILE.

@@ -10,19 +10,27 @@
 *& <--  p2        text
 *&---------------------------------------------------------------------*
 FORM on_ok .
-  DATA: lr_data     TYPE REF TO data,
-        lt_receiver TYPE TABLE OF string.
-  FIELD-SYMBOLS: <lt_data> TYPE table.
+  DATA: lv_text TYPE string.
 
-  ASSIGN lr_data->* TO <lt_data>.
+  go_edit->get_textstream(
+*    EXPORTING
+*      only_when_modified     = false       " get text only when modified
+    IMPORTING
+      text                   = lv_text        " Text as String with Carriage Returns and Linefeeds
+*      is_modified            = is_modified " modify status of text
+*    EXCEPTIONS
+*      error_cntl_call_method = 1           " Error while retrieving a property from TextEdit control
+*      not_supported_by_gui   = 2           " Method is not supported by installed GUI
+*      others                 = 3
+  ).
+  cl_gui_cfw=>flush( ).
 
-
-  CALL FUNCTION 'ZA2XH_EMAIL'
+  go_assist->mo_param->set_value(
     EXPORTING
-      it_data     = <lt_data>
-*     it_field    = it_field
-*     iv_filename = iv_filename
-*     iv_subject  = iv_subject
-*     iv_sender   = iv_sender
-      it_receiver = lt_receiver.
+      iv_key   = 'IT_RECEIVER'
+      iv_value = go_assist->split_email_string( lv_text )
+  ).
+
+  go_assist->on_ok( ).
+  LEAVE TO SCREEN 0.
 ENDFORM.
