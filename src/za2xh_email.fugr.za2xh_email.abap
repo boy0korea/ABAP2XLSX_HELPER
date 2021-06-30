@@ -4,10 +4,14 @@ FUNCTION za2xh_email.
 *"  IMPORTING
 *"     REFERENCE(IT_DATA) TYPE  TABLE
 *"     REFERENCE(IT_FIELD) TYPE  ZA2XH_T_FIELDCATALOG OPTIONAL
-*"     REFERENCE(IV_FILENAME) TYPE  STRING OPTIONAL
-*"     REFERENCE(IV_SUBJECT) TYPE  STRING OPTIONAL
-*"     REFERENCE(IV_SENDER) TYPE  STRING OPTIONAL
+*"     REFERENCE(IV_SUBJECT) TYPE  CLIKE OPTIONAL
+*"     REFERENCE(IV_SENDER) TYPE  CLIKE OPTIONAL
 *"     REFERENCE(IT_RECEIVER) TYPE  STRINGTAB
+*"     REFERENCE(IV_FILENAME) TYPE  CLIKE OPTIONAL
+*"     REFERENCE(IV_SHEET_TITLE) TYPE  CLIKE OPTIONAL
+*"     REFERENCE(IV_ADD_FIXEDVALUE_SHEET) TYPE  FLAG DEFAULT ABAP_TRUE
+*"     REFERENCE(IV_AUTO_COLUMN_WIDTH) TYPE  FLAG DEFAULT ABAP_TRUE
+*"     REFERENCE(IV_DEFAULT_DESCR) TYPE  C DEFAULT 'L'
 *"----------------------------------------------------------------------
   DATA: lt_field           TYPE za2xh_t_fieldcatalog,
         lv_xstring         TYPE xstring,
@@ -108,13 +112,17 @@ FUNCTION za2xh_email.
     CALL FUNCTION 'ZA2XH_EMAIL_RFC'
       IN BACKGROUND TASK AS SEPARATE UNIT
       EXPORTING
-        iv_data_json   = lv_data_json
-        it_ddic_object = lt_ddic_object
-        it_field       = lt_field
-        iv_filename    = iv_filename
-        iv_subject     = iv_subject
-        iv_sender      = iv_sender
-        it_receiver    = it_receiver.
+        iv_data_json            = lv_data_json
+        it_ddic_object          = lt_ddic_object
+        it_field                = lt_field
+        iv_subject              = CONV string( iv_subject )
+        iv_sender               = CONV string( iv_sender )
+        it_receiver             = it_receiver
+        iv_filename             = lv_filename_string
+        iv_sheet_title          = CONV string( iv_sheet_title )
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr.
 
     lv_from = lv_from + lv_parti.
   ENDWHILE.

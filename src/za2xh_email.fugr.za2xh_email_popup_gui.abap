@@ -4,14 +4,24 @@ FUNCTION za2xh_email_popup_gui .
 *"  IMPORTING
 *"     REFERENCE(IO_PARAM) TYPE REF TO  IF_FPM_PARAMETER
 *"----------------------------------------------------------------------
+  DATA: lt_receiver TYPE TABLE OF string.
 
-  CREATE OBJECT go_assist.
+  IF go_assist IS INITIAL.
+    CREATE OBJECT go_assist.
+  ENDIF.
+
   IF io_param IS NOT INITIAL.
     go_assist->mo_param = io_param.
+    io_param->get_value(
+      EXPORTING
+        iv_key   = 'IT_RECEIVER'
+      IMPORTING
+        ev_value = lt_receiver
+    ).
+    CONCATENATE LINES OF lt_receiver INTO gv_email SEPARATED BY cl_abap_char_utilities=>newline.
   ELSE.
     CREATE OBJECT go_assist->mo_param TYPE cl_fpm_parameter.
   ENDIF.
-
 
   IF go_edit IS NOT INITIAL.
     go_edit->delete_text( ).

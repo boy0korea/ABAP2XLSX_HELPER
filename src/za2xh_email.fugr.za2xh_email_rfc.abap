@@ -5,10 +5,14 @@ FUNCTION za2xh_email_rfc.
 *"     VALUE(IV_DATA_JSON) TYPE  STRING
 *"     VALUE(IT_DDIC_OBJECT) TYPE  DD_X031L_TABLE
 *"     VALUE(IT_FIELD) TYPE  ZA2XH_T_FIELDCATALOG
-*"     VALUE(IV_FILENAME) TYPE  STRING OPTIONAL
 *"     VALUE(IV_SUBJECT) TYPE  STRING OPTIONAL
 *"     VALUE(IV_SENDER) TYPE  STRING OPTIONAL
 *"     VALUE(IT_RECEIVER) TYPE  STRINGTAB
+*"     VALUE(IV_FILENAME) TYPE  STRING OPTIONAL
+*"     VALUE(IV_SHEET_TITLE) TYPE  STRING OPTIONAL
+*"     VALUE(IV_ADD_FIXEDVALUE_SHEET) TYPE  FLAG DEFAULT ABAP_TRUE
+*"     VALUE(IV_AUTO_COLUMN_WIDTH) TYPE  FLAG DEFAULT ABAP_TRUE
+*"     VALUE(IV_DEFAULT_DESCR) TYPE  CHAR1 DEFAULT 'L'
 *"----------------------------------------------------------------------
   DATA: lv_excel       TYPE xstring,
         lo_bcs         TYPE REF TO cl_bcs,
@@ -28,10 +32,10 @@ FUNCTION za2xh_email_rfc.
       iv_data_json            = iv_data_json
       it_ddic_object          = it_ddic_object
       it_field                = it_field
-*      iv_sheet_title          = iv_sheet_title
-*      iv_add_fixedvalue_sheet = abap_true      " fixed value sheet
-*      iv_auto_column_width    = abap_true      " auto width
-*      iv_default_descr        = 'L'            " L or M or S
+      iv_sheet_title          = iv_sheet_title
+      iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+      iv_auto_column_width    = iv_auto_column_width
+      iv_default_descr        = iv_default_descr
     IMPORTING
       ev_excel                = lv_excel
 *      ev_error_text           = ev_error_text

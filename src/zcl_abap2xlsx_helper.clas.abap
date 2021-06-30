@@ -29,6 +29,9 @@ public section.
     importing
       !IT_DATA type STANDARD TABLE
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_SUBJECT type CLIKE optional
+      !IV_SENDER type CLIKE optional
+      !IT_RECEIVER type STRINGTAB optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
@@ -211,6 +214,24 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD excel_email.
+    CHECK: is_abap2xlsx_installed( ) EQ abap_true.
+    CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('EXCEL_EMAIL')
+*    CALL METHOD zcl_abap2xlsx_helper_int=>excel_email
+      EXPORTING
+        it_data                 = it_data
+        it_field                = it_field
+        iv_subject              = iv_subject
+        iv_sender               = iv_sender
+        it_receiver             = it_receiver
+        iv_filename             = iv_filename
+        iv_sheet_title          = iv_sheet_title
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr.
+  ENDMETHOD.
+
+
   METHOD excel_upload.
     CHECK: is_abap2xlsx_installed( ) EQ abap_true.
     CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('EXCEL_UPLOAD')
@@ -223,6 +244,21 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
       IMPORTING
         et_data       = et_data
         ev_error_text = ev_error_text.
+  ENDMETHOD.
+
+
+  METHOD fpm_upload_popup.
+    DATA: lo_param TYPE REF TO if_fpm_parameter.
+
+    CREATE OBJECT lo_param TYPE cl_fpm_parameter.
+
+    lo_param->set_value(
+      EXPORTING
+        iv_key   = 'IV_CALLBACK_EVENT_ID'
+        iv_value = iv_callback_event_id
+    ).
+
+    zcl_a2xh_upload_popup=>open_popup( lo_param ).
   ENDMETHOD.
 
 
@@ -391,35 +427,5 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         it_field                = lt_field
     ).
 
-  ENDMETHOD.
-
-
-  METHOD excel_email.
-    CHECK: is_abap2xlsx_installed( ) EQ abap_true.
-    CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('EXCEL_EMAIL')
-*    CALL METHOD zcl_abap2xlsx_helper_int=>excel_email
-      EXPORTING
-        it_data                 = it_data
-        it_field                = it_field
-        iv_filename             = iv_filename
-        iv_sheet_title          = iv_sheet_title
-        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
-        iv_auto_column_width    = iv_auto_column_width
-        iv_default_descr        = iv_default_descr.
-  ENDMETHOD.
-
-
-  METHOD fpm_upload_popup.
-    DATA: lo_param TYPE REF TO if_fpm_parameter.
-
-    CREATE OBJECT lo_param TYPE cl_fpm_parameter.
-
-    lo_param->set_value(
-      EXPORTING
-        iv_key   = 'IV_CALLBACK_EVENT_ID'
-        iv_value = iv_callback_event_id
-    ).
-
-    zcl_a2xh_upload_popup=>open_popup( lo_param ).
   ENDMETHOD.
 ENDCLASS.

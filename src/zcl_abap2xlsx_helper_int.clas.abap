@@ -20,6 +20,9 @@ public section.
     importing
       !IT_DATA type STANDARD TABLE
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_SUBJECT type CLIKE optional
+      !IV_SENDER type CLIKE optional
+      !IT_RECEIVER type STRINGTAB optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
@@ -172,7 +175,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         lo_worksheet_fv = io_excel->add_new_worksheet( lv_sheet_title_fv ).
         lo_worksheet_fv->bind_table(
           EXPORTING
-            ip_table     = lt_ddl
+            ip_table          = lt_ddl
+            it_field_catalog  = VALUE #(
+                                  ( fieldname = 'VALUE' position = 1 scrtext_l = 'Value' dynpfld = abap_true )
+                                  ( fieldname = 'TEXT' position = 2 scrtext_l = 'Text' dynpfld = abap_true )
+                                )
         ).
         lo_worksheet_fv->zif_excel_sheet_protection~protected = lo_worksheet_fv->zif_excel_sheet_protection~c_protected.
         lo_worksheet_fv->zif_excel_sheet_protection~sheet = lo_worksheet_fv->zif_excel_sheet_protection~c_active.
@@ -323,7 +330,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                <lv_data_ref> <> 'EUR'.
               CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
                 EXPORTING
-                  currency        = <lv_data_ref>
+                  currency        = CONV tcurc-waers( <lv_data_ref> )
                   amount_internal = <lv_data>
                 IMPORTING
                   amount_external = lv_amount_external.
@@ -555,7 +562,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                   ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
                   CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_INTERNAL'
                     EXPORTING
-                      currency             = <lv_data_ref>
+                      currency             = CONV tcurc-waers( <lv_data_ref> )
                       amount_external      = lv_amount_external
                       max_number_of_digits = 23
                     IMPORTING
@@ -672,7 +679,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
     DATA: lt_receiver TYPE TABLE OF string,
           lo_param    TYPE REF TO if_fpm_parameter.
 
-    lt_receiver = zcl_a2xh_email_popup=>get_default_receiver( ).
+    IF it_receiver IS NOT INITIAL.
+      lt_receiver = it_receiver.
+    ELSE.
+      lt_receiver = zcl_a2xh_email_popup=>get_default_receiver( ).
+    ENDIF.
 
     lo_param = NEW cl_fpm_parameter( ).
 
@@ -696,14 +707,26 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
     lo_param->set_value(
       EXPORTING
+        iv_key   = 'IV_SUBJECT'
+        iv_value = CONV string( iv_subject )
+    ).
+
+    lo_param->set_value(
+      EXPORTING
+        iv_key   = 'IV_SENDER'
+        iv_value = CONV string( iv_sender )
+    ).
+
+    lo_param->set_value(
+      EXPORTING
         iv_key   = 'IV_FILENAME'
-        iv_value = iv_filename
+        iv_value = CONV string( iv_filename )
     ).
 
     lo_param->set_value(
       EXPORTING
         iv_key   = 'IV_SHEET_TITLE'
-        iv_value = iv_sheet_title
+        iv_value = CONV string( iv_sheet_title )
     ).
 
     lo_param->set_value(
@@ -714,7 +737,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
     lo_param->set_value(
       EXPORTING
-        iv_key   = 'IV_ADD_FIXEDVALUE_SHEET'
+        iv_key   = 'IV_AUTO_COLUMN_WIDTH'
         iv_value = iv_auto_column_width
     ).
 
@@ -730,7 +753,9 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       zcl_a2xh_email_popup=>open_popup( io_param = lo_param ).
     ELSE.
       " GUI
-      CALL FUNCTION 'ZA2XH_EMAIL_POPUP_GUI'.
+      CALL FUNCTION 'ZA2XH_EMAIL_POPUP_GUI'
+        EXPORTING
+          io_param = lo_param.
     ENDIF.
 
 

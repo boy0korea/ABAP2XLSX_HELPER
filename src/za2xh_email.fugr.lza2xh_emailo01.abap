@@ -19,6 +19,11 @@ MODULE status_2100 OUTPUT.
         parent = go_cont.
   ENDIF.
 
+  IF gv_email IS NOT INITIAL.
+    go_edit->set_textstream( gv_email ).
+    CLEAR: gv_email.
+  ENDIF.
+
   go_edit->set_focus( go_edit ).
 
 ENDMODULE.
