@@ -9,6 +9,7 @@ FUNCTION za2xh_email.
 *"     REFERENCE(IT_RECEIVER) TYPE  STRINGTAB
 *"     REFERENCE(IV_FILENAME) TYPE  CLIKE OPTIONAL
 *"     REFERENCE(IV_SHEET_TITLE) TYPE  CLIKE OPTIONAL
+*"     REFERENCE(IV_IMAGE_XSTRING) TYPE  XSTRING OPTIONAL
 *"     REFERENCE(IV_ADD_FIXEDVALUE_SHEET) TYPE  FLAG DEFAULT ABAP_TRUE
 *"     REFERENCE(IV_AUTO_COLUMN_WIDTH) TYPE  FLAG DEFAULT ABAP_TRUE
 *"     REFERENCE(IV_DEFAULT_DESCR) TYPE  C DEFAULT 'L'
@@ -120,6 +121,7 @@ FUNCTION za2xh_email.
         it_receiver             = it_receiver
         iv_filename             = lv_filename_string
         iv_sheet_title          = CONV string( iv_sheet_title )
+        iv_image_xstring        = iv_image_xstring
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
         iv_auto_column_width    = iv_auto_column_width
         iv_default_descr        = iv_default_descr.

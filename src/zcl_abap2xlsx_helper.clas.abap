@@ -19,6 +19,7 @@ public section.
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
@@ -34,6 +35,7 @@ public section.
       !IT_RECEIVER type STRINGTAB optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L' .
@@ -57,6 +59,7 @@ public section.
       !IT_DATA type STANDARD TABLE
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
@@ -69,6 +72,7 @@ public section.
       !IT_DDIC_OBJECT type DD_X031L_TABLE
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
@@ -84,6 +88,11 @@ public section.
     exporting
       !ET_DATA type STANDARD TABLE
       !EV_ERROR_TEXT type STRING .
+  class-methods GET_XSTRING_FROM_SMW0
+    importing
+      !IV_SMW0 type WWWDATA-OBJID
+    returning
+      value(RV_XSTRING) type XSTRING .
   class-methods FPM_UPLOAD_POPUP
     importing
       !IV_CALLBACK_EVENT_ID type FPM_EVENT_ID default 'ZA2XH_UPLOAD' .
@@ -149,6 +158,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         it_data                 = it_data
         it_field                = it_field
         iv_sheet_title          = iv_sheet_title
+        iv_image_xstring        = iv_image_xstring
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
         iv_auto_column_width    = iv_auto_column_width
         iv_default_descr        = iv_default_descr
@@ -182,6 +192,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         it_ddic_object          = it_ddic_object
         it_field                = it_field
         iv_sheet_title          = iv_sheet_title
+        iv_image_xstring        = iv_image_xstring
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
         iv_auto_column_width    = iv_auto_column_width
         iv_default_descr        = iv_default_descr
@@ -205,6 +216,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         it_field                = it_field
         iv_filename             = iv_filename
         iv_sheet_title          = iv_sheet_title
+        iv_image_xstring        = iv_image_xstring
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
         iv_auto_column_width    = iv_auto_column_width
         iv_default_descr        = iv_default_descr
@@ -226,6 +238,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         it_receiver             = it_receiver
         iv_filename             = iv_filename
         iv_sheet_title          = iv_sheet_title
+        iv_image_xstring        = iv_image_xstring
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
         iv_auto_column_width    = iv_auto_column_width
         iv_default_descr        = iv_default_descr.
@@ -299,6 +312,17 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         iv_default_descr = iv_default_descr
       IMPORTING
         et_field         = et_field.
+  ENDMETHOD.
+
+
+  METHOD get_xstring_from_smw0.
+    CHECK: is_abap2xlsx_installed( ) EQ abap_true.
+    CALL METHOD ('ZCL_ABAP2XLSX_HELPER_INT')=>('GET_XSTRING_FROM_SMW0')
+*    CALL METHOD zcl_abap2xlsx_helper_int=>GET_XSTRING_FROM_SMW0
+      EXPORTING
+        iv_smw0    = iv_smw0
+      RECEIVING
+        rv_xstring = rv_xstring.
   ENDMETHOD.
 
 
@@ -402,6 +426,7 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
       EXPORTING
         it_data  = lt_sflight
         it_field = lt_field
+        iv_image_xstring = zcl_abap2xlsx_helper=>get_xstring_from_smw0( 'S_F_FAVO' )
       IMPORTING
         ev_excel = lv_xstring
     ).

@@ -10,6 +10,7 @@ FUNCTION za2xh_email_rfc.
 *"     VALUE(IT_RECEIVER) TYPE  STRINGTAB
 *"     VALUE(IV_FILENAME) TYPE  STRING OPTIONAL
 *"     VALUE(IV_SHEET_TITLE) TYPE  STRING OPTIONAL
+*"     VALUE(IV_IMAGE_XSTRING) TYPE  XSTRING OPTIONAL
 *"     VALUE(IV_ADD_FIXEDVALUE_SHEET) TYPE  FLAG DEFAULT ABAP_TRUE
 *"     VALUE(IV_AUTO_COLUMN_WIDTH) TYPE  FLAG DEFAULT ABAP_TRUE
 *"     VALUE(IV_DEFAULT_DESCR) TYPE  CHAR1 DEFAULT 'L'
@@ -33,6 +34,7 @@ FUNCTION za2xh_email_rfc.
       it_ddic_object          = it_ddic_object
       it_field                = it_field
       iv_sheet_title          = iv_sheet_title
+      iv_image_xstring        = iv_image_xstring
       iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
       iv_auto_column_width    = iv_auto_column_width
       iv_default_descr        = iv_default_descr

@@ -56,6 +56,7 @@ CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
           lt_receiver             TYPE TABLE OF string,
           lv_filename             TYPE string,
           lv_sheet_title          TYPE string,
+          lv_image_xstring        TYPE xstring,
           lv_add_fixedvalue_sheet TYPE flag,
           lv_auto_column_width    TYPE flag,
           lv_default_descr        TYPE char1.
@@ -115,6 +116,13 @@ CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
 
     mo_param->get_value(
       EXPORTING
+        iv_key   = 'IV_IMAGE_XSTRING'
+      IMPORTING
+        ev_value = lv_image_xstring
+    ).
+
+    mo_param->get_value(
+      EXPORTING
         iv_key   = 'IV_ADD_FIXEDVALUE_SHEET'
       IMPORTING
         ev_value = lv_add_fixedvalue_sheet
@@ -144,6 +152,7 @@ CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
         it_receiver             = lt_receiver
         iv_filename             = lv_filename
         iv_sheet_title          = lv_sheet_title
+        iv_image_xstring        = lv_image_xstring
         iv_add_fixedvalue_sheet = lv_add_fixedvalue_sheet
         iv_auto_column_width    = lv_auto_column_width
         iv_default_descr        = lv_default_descr.

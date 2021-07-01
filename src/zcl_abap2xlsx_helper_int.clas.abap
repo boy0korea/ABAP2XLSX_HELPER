@@ -10,6 +10,7 @@ public section.
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
@@ -25,6 +26,7 @@ public section.
       !IT_RECEIVER type STRINGTAB optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L' .
@@ -49,6 +51,7 @@ public section.
       !IT_DDIC_OBJECT type DD_X031L_TABLE optional
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
@@ -61,6 +64,7 @@ public section.
       !IT_DDIC_OBJECT type DD_X031L_TABLE
       !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
       !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
       !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
       !IV_DEFAULT_DESCR type C default 'L'
@@ -76,6 +80,11 @@ public section.
     exporting
       !ET_DATA type STANDARD TABLE
       !EV_ERROR_TEXT type STRING .
+  class-methods GET_XSTRING_FROM_SMW0
+    importing
+      !IV_SMW0 type WWWDATA-OBJID
+    returning
+      value(RV_XSTRING) type XSTRING .
   PROTECTED SECTION.
 
     CLASS-METHODS start_download
@@ -99,6 +108,14 @@ public section.
         !io_excel            TYPE REF TO zcl_excel
         !iv_worksheet_index  TYPE i DEFAULT 1
         !iv_header_row_index TYPE i DEFAULT 1
+      RAISING
+        zcx_excel .
+    CLASS-METHODS add_image
+      IMPORTING
+        !iv_image_xstring   TYPE xstring
+        !iv_col             TYPE i
+        !io_excel           TYPE REF TO zcl_excel
+        !iv_worksheet_index TYPE i DEFAULT 1
       RAISING
         zcx_excel .
   PRIVATE SECTION.
@@ -221,6 +238,58 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
     ENDLOOP.
 
+  ENDMETHOD.
+
+
+  METHOD add_image.
+* http://www.abap2xlsx.org
+    DATA: lo_worksheet    TYPE REF TO zcl_excel_worksheet,
+          lo_drawing      TYPE REF TO zcl_excel_drawing,
+          lv_image_type   TYPE string,
+          lv_image_width  TYPE i,
+          lv_image_height TYPE i.
+
+
+    cl_fxs_image_info=>determine_info(
+      EXPORTING
+        iv_data     = iv_image_xstring
+      IMPORTING
+        ev_mimetype = lv_image_type
+        ev_xres     = lv_image_width
+        ev_yres     = lv_image_height
+    ).
+    CASE lv_image_type.
+      WHEN cl_fxs_mime_types=>co_image_bitmap.
+        lv_image_type = 'BMP'.
+      WHEN cl_fxs_mime_types=>co_image_png.
+        lv_image_type = 'PNG'.
+      WHEN cl_fxs_mime_types=>co_image_gif.
+        lv_image_type = 'GIF'.
+      WHEN cl_fxs_mime_types=>co_image_tiff.
+        lv_image_type = 'TIF'.
+      WHEN cl_fxs_mime_types=>co_image_jpeg.
+        lv_image_type = 'JPG'.
+      WHEN OTHERS.
+        " not supported.
+        RETURN.
+    ENDCASE.
+
+    lo_worksheet = io_excel->get_worksheet_by_index( iv_worksheet_index ).
+    lo_drawing = io_excel->add_new_drawing( ).
+
+    lo_drawing->set_media(
+      EXPORTING
+        ip_media      = iv_image_xstring
+        ip_media_type = lv_image_type
+        ip_width      = lv_image_width
+        ip_height     = lv_image_height
+    ).
+    lo_drawing->set_position(
+      EXPORTING
+        ip_from_row = 1
+        ip_from_col = zcl_excel_common=>convert_column2alpha( iv_col )
+    ).
+    lo_worksheet->add_drawing( lo_drawing ).
   ENDMETHOD.
 
 
@@ -364,10 +433,18 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
               it_field            = it_field
               it_field_catalog    = lt_field_catalog
               io_excel            = lo_excel
-              iv_worksheet_index  = 1
-              iv_header_row_index = 1
           ).
           lo_excel->set_active_sheet_index( 1 ).
+        ENDIF.
+
+        " add image
+        IF iv_image_xstring IS NOT INITIAL.
+          add_image(
+            EXPORTING
+              iv_image_xstring   = iv_image_xstring
+              iv_col             = lines( lt_field_catalog ) + 1
+              io_excel           = lo_excel
+          ).
         ENDIF.
 
         "freeze column headers when scrolling
@@ -626,6 +703,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         it_ddic_object          = it_ddic_object
         it_field                = it_field
         iv_sheet_title          = iv_sheet_title
+        iv_image_xstring        = iv_image_xstring
         iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
         iv_auto_column_width    = iv_auto_column_width
         iv_default_descr        = iv_default_descr
@@ -650,14 +728,16 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 * http://www.abap2xlsx.org
     convert_abap_to_excel(
       EXPORTING
-        it_data              = it_data
-        it_field             = it_field
-        iv_sheet_title       = iv_sheet_title
-        iv_auto_column_width = iv_auto_column_width
-        iv_default_descr     = iv_default_descr
+        it_data                 = it_data
+        it_field                = it_field
+        iv_sheet_title          = iv_sheet_title
+        iv_image_xstring        = iv_image_xstring
+        iv_add_fixedvalue_sheet = iv_add_fixedvalue_sheet
+        iv_auto_column_width    = iv_auto_column_width
+        iv_default_descr        = iv_default_descr
       IMPORTING
-        ev_excel             = ev_excel
-        ev_error_text        = ev_error_text
+        ev_excel                = ev_excel
+        ev_error_text           = ev_error_text
     ).
 
     IF ev_error_text IS NOT INITIAL.
@@ -727,6 +807,12 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       EXPORTING
         iv_key   = 'IV_SHEET_TITLE'
         iv_value = CONV string( iv_sheet_title )
+    ).
+
+    lo_param->set_value(
+      EXPORTING
+        iv_key   = 'IV_IMAGE_XSTRING'
+        iv_value = iv_image_xstring
     ).
 
     lo_param->set_value(
@@ -824,6 +910,20 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       ENDCASE.
       APPEND ls_field TO et_field.
     ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD get_xstring_from_smw0.
+    DATA: lo_drawing TYPE REF TO zcl_excel_drawing.
+
+    CREATE OBJECT lo_drawing.
+    lo_drawing->set_media_www(
+      EXPORTING
+        ip_key    = VALUE #( relid = 'MI' objid = iv_smw0 )
+        ip_width  = 0
+        ip_height = 0
+    ).
+    rv_xstring = lo_drawing->get_media( ).
   ENDMETHOD.
 
 
