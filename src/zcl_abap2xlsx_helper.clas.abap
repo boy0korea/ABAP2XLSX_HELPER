@@ -133,12 +133,17 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   METHOD check_install.
 * https://github.com/boy0korea/ABAP_INSTALL_CHECK
 
-    cl_abap_typedescr=>describe_by_name(
-      EXPORTING
-        p_name         = iv_class_name
-      EXCEPTIONS
-        type_not_found = 1
-    ).
+    TRY.
+        cl_abap_typedescr=>describe_by_name(
+          EXPORTING
+            p_name         = iv_class_name
+          EXCEPTIONS
+            type_not_found = 1
+        ).
+      CATCH cx_root.
+        " error
+        sy-subrc = 4.
+    ENDTRY.
 
     IF sy-subrc EQ 0.
       " exist
