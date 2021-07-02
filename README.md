@@ -25,6 +25,13 @@ abap2xlsx helper
 - ZCL_ABAP2XLSX_HELPER=>FPM_UPLOAD_POPUP
 - ZCL_ABAP2XLSX_HELPER=>GET_DDIC_FIXED_VALUES
 
+- FPM enhancements @ list UIBB
+<BR>![image](https://user-images.githubusercontent.com/75079431/124207191-ebb66380-db1f-11eb-8b1e-1f6cc0466a16.png)
+<BR>Excel by abap2xlsx : 다운로드 실행 ZCL_ABAP2XLSX_HELPER=>EXCEL_DOWNLOAD
+<BR>Email me : 이메일 전송 실행 ZCL_ABAP2XLSX_HELPER=>EXCEL_EMAIL
+<BR>
+
+  
 ## English
 this is not stable. you can use these methods.
 - ZCL_ABAP2XLSX_HELPER=>EXCEL_DOWNLOAD
@@ -44,3 +51,9 @@ this is not stable. you can use these methods.
 <BR>convert image file from SMW0 to XSTRING. if add image to excel, use IV_IMAGE_XSTRING parameter.<BR>
 - ZCL_ABAP2XLSX_HELPER=>FPM_UPLOAD_POPUP
 - ZCL_ABAP2XLSX_HELPER=>GET_DDIC_FIXED_VALUES
+
+- FPM enhancements @ list UIBB
+<BR>![image](https://user-images.githubusercontent.com/75079431/124207191-ebb66380-db1f-11eb-8b1e-1f6cc0466a16.png)
+<BR>Excel by abap2xlsx : it calls ZCL_ABAP2XLSX_HELPER=>EXCEL_DOWNLOAD
+<BR>Email me : it calls ZCL_ABAP2XLSX_HELPER=>EXCEL_EMAIL
+<BR>
