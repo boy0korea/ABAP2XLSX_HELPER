@@ -24,6 +24,7 @@
       <item>      zcl_a2xh_fpm_enh=&gt;enh_cl_fpm_list_uibb_renderer_(</item>
       <item>        EXPORTING</item>
       <item>          io_export_btn_choice = lo_export_btn_choice</item>
+      <item>          iv_export_action     = lc_export_action</item>
       <item>      ).</item>
       <item>    ENDIF.</item>
       <item/>

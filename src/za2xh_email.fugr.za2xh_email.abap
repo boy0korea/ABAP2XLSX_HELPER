@@ -50,7 +50,14 @@ FUNCTION za2xh_email.
 
   lo_tab_type ?= cl_abap_tabledescr=>describe_by_data( it_data ).
   lo_struc_type ?= lo_tab_type->get_table_line_type( ).
-  lt_ddic_object = lo_struc_type->get_ddic_object( ).
+  lo_struc_type->get_ddic_object(
+    RECEIVING
+      p_object     = lt_ddic_object
+    EXCEPTIONS
+      not_found    = 1
+      no_ddic_type = 2
+      others       = 3
+  ).
   lt_comp_view = lo_struc_type->get_included_view( ).
   SORT lt_comp_view BY name.
   LOOP AT lt_field ASSIGNING <ls_field>.

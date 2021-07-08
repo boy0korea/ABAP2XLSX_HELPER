@@ -11,10 +11,13 @@ public section.
       !IV_FORMAT type FPMGB_EXPORT_FORMAT
       !IRT_RESULT_DATA type ref to DATA
       !IT_P13N_COLUMN type IF_FPM_LIST_SETTINGS_VARIANT=>TY_T_O_COLUMN
-      !IT_FIELD_USAGE type FPMGB_T_FIELDUSAGE .
+      !IT_FIELD_USAGE type FPMGB_T_FIELDUSAGE
+      !IV_FROM_COMP type WDY_COMPONENT_NAME
+      !IO_C_TABLE type ref to CL_WD_C_TABLE .
   class-methods ENH_CL_FPM_LIST_UIBB_RENDERER_
     importing
-      !IO_EXPORT_BTN_CHOICE type ref to CL_WD_TOOLBAR_BTN_CHOICE .
+      !IO_EXPORT_BTN_CHOICE type ref to CL_WD_TOOLBAR_BTN_CHOICE
+      !IV_EXPORT_ACTION type STRING .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
@@ -40,6 +43,11 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
 
     ASSIGN irt_result_data->* TO <lt_data>.
 
+    io_c_table->get_data_source( )->get_static_attributes_table(
+      IMPORTING
+        table = <lt_data>
+    ).
+
     zcl_abap2xlsx_helper=>get_fieldcatalog(
       EXPORTING
         it_data          = <lt_data>
@@ -47,13 +55,27 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
         et_field         = lt_field2
     ).
 
+    IF iv_from_comp EQ if_fpm_constants=>gc_components-tree.
+      ls_field-fieldname = 'MASTER_COLUMN_TEXT'.
+      ls_field-label_text = io_c_table->get_column( id = 'MASTER_COLUMN' )->get_header( )->get_text( ).
+      APPEND ls_field TO lt_field.
+    ENDIF.
+
     LOOP AT it_p13n_column INTO lo_p13n_column.
       CHECK: lo_p13n_column->is_visible( ).
       lv_column_name = lo_p13n_column->get_name( ).
       READ TABLE lt_field2 INTO ls_field WITH KEY fieldname = lv_column_name.
       CHECK: sy-subrc EQ 0.
+
+      IF iv_from_comp EQ if_fpm_constants=>gc_components-tree.
+        ls_field-label_text = io_c_table->get_column( id = lv_column_name && '_C' )->get_header( )->get_text( ).
+      ELSE.
+        ls_field-label_text = io_c_table->get_column( id = lv_column_name )->get_header( )->get_text( ).
+      ENDIF.
+
       READ TABLE it_field_usage INTO ls_field_usage WITH KEY name = lv_column_name.
-      ls_field-label_text = ls_field_usage-label_text.
+*      ls_field-label_text = ls_field_usage-label_text.
+      ls_field-fixed_values = ls_field_usage-fixed_values.
       APPEND ls_field TO lt_field.
     ENDLOOP.
 
@@ -65,14 +87,11 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
             it_field             = lt_field
         ).
       WHEN 'ZA2E'.
-*        CALL FUNCTION 'ZA2XH_EMAIL'
-*          EXPORTING
-*            it_data     = <lt_data>
-*            it_field    = lt_field
-**           iv_filename = iv_filename
-**           iv_subject  = iv_subject
-**           iv_sender   = iv_sender
-*            it_receiver = it_receiver.
+        zcl_abap2xlsx_helper=>excel_email(
+          EXPORTING
+            it_data                 = <lt_data>
+            it_field                = lt_field
+        ).
     ENDCASE.
 
 
@@ -145,7 +164,7 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
       lo_tab_action =
         cl_wd_menu_action_item=>new_menu_action_item(
           id           = `MNUAI_FPM_EXPORT_` && ls_fv-low   "#EC NOTEXT
-          on_action    = 'DISPATCH_EXPORT'  " lif_renderer_constants=>cs_table_action-export
+          on_action    = iv_export_action  " lif_renderer_constants=>cs_table_action-export
           text         = CONV string( ls_fv-ddtext )
           enabled      = abap_true
           visible      = abap_true

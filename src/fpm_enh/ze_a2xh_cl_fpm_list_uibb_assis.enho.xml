@@ -34,6 +34,8 @@
       <item>          irt_result_data = zlrt_result_data</item>
       <item>          it_p13n_column  = me-&gt;mo_list_uibb_assist-&gt;mo_personalization_api-&gt;get_current_variant( )-&gt;get_columns( )</item>
       <item>          it_field_usage  = me-&gt;mo_list_uibb_assist-&gt;mt_field_usage</item>
+      <item>          iv_from_comp    = me-&gt;mo_list_uibb_assist-&gt;mv_component_name</item>
+      <item>          io_c_table      = cast CL_FPM_LIST_UIBB_RENDERER_ATS( me-&gt;mo_list_uibb_assist-&gt;mo_render )-&gt;get_table_ui_element( )</item>
       <item>      ).</item>
       <item>      RETURN.</item>
       <item>    ENDIF.</item>

@@ -96,6 +96,10 @@ public section.
   class-methods FPM_UPLOAD_POPUP
     importing
       !IV_CALLBACK_EVENT_ID type FPM_EVENT_ID default 'ZA2XH_UPLOAD' .
+  class-methods WD_UPLOAD_POPUP
+    importing
+      !IV_CALLBACK_ACTION type STRING
+      !IO_VIEW type ref to IF_WD_VIEW_CONTROLLER .
   class-methods DEFAULT_EXCEL_FILENAME
     returning
       value(RV_FILENAME) type STRING .
@@ -266,17 +270,17 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
 
 
   METHOD fpm_upload_popup.
-    DATA: lo_param TYPE REF TO if_fpm_parameter.
+    DATA: lo_event_data TYPE REF TO if_fpm_parameter.
 
-    CREATE OBJECT lo_param TYPE cl_fpm_parameter.
+    CREATE OBJECT lo_event_data TYPE cl_fpm_parameter.
 
-    lo_param->set_value(
+    lo_event_data->set_value(
       EXPORTING
         iv_key   = 'IV_CALLBACK_EVENT_ID'
         iv_value = iv_callback_event_id
     ).
 
-    zcl_a2xh_upload_popup=>open_popup( lo_param ).
+    zcl_za2xh_upload_popup=>open_popup( lo_event_data ).
   ENDMETHOD.
 
 
@@ -457,5 +461,26 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         it_field                = lt_field
     ).
 
+  ENDMETHOD.
+
+
+  METHOD wd_upload_popup.
+    DATA: lo_event_data TYPE REF TO if_fpm_parameter.
+
+    CREATE OBJECT lo_event_data TYPE cl_fpm_parameter.
+
+    lo_event_data->set_value(
+      EXPORTING
+        iv_key   = 'IV_CALLBACK_ACTION'
+        iv_value = iv_callback_action
+    ).
+
+    lo_event_data->set_value(
+      EXPORTING
+        iv_key   = 'IO_VIEW'
+        iv_value = CAST cl_wdr_view( io_view )
+    ).
+
+    zcl_za2xh_upload_popup=>open_popup( lo_event_data ).
   ENDMETHOD.
 ENDCLASS.
