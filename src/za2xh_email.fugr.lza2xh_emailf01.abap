@@ -25,7 +25,7 @@ FORM on_ok .
   ).
   cl_gui_cfw=>flush( ).
 
-  go_assist->mo_event_data->set_value(
+  go_assist->mo_param->set_value(
     EXPORTING
       iv_key   = 'IT_RECEIVER'
       iv_value = go_assist->split_email_string( lv_text )
