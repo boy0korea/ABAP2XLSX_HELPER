@@ -1,31 +1,40 @@
-class ZCL_A2XH_EMAIL_POPUP definition
-  public
-  inheriting from CL_WD_COMPONENT_ASSISTANCE
-  create public .
+CLASS zcl_za2xh_email_popup DEFINITION
+  PUBLIC
+  INHERITING FROM cl_wd_component_assistance
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  data MO_PARAM type ref to IF_FPM_PARAMETER .
+    DATA mo_event_data TYPE REF TO if_fpm_parameter .
+    CLASS-DATA gv_wd_comp_id TYPE string READ-ONLY .
+    CLASS-DATA go_wd_comp TYPE REF TO ziwci_a2xh_email_popup READ-ONLY .
 
-  class-methods OPEN_POPUP
-    importing
-      !IO_PARAM type ref to IF_FPM_PARAMETER .
-  methods ON_OK .
-  class-methods SPLIT_EMAIL_STRING
-    importing
-      !IV_INPUT type CLIKE
-    returning
-      value(RT_EMAIL) type STRINGTAB .
-  class-methods GET_DEFAULT_RECEIVER
-    returning
-      value(RT_RECEIVER) type STRINGTAB .
-protected section.
-private section.
+    CLASS-METHODS class_constructor .
+    CLASS-METHODS open_popup
+      IMPORTING
+        !io_event_data TYPE REF TO if_fpm_parameter OPTIONAL .
+    METHODS on_ok .
+    CLASS-METHODS split_email_string
+      IMPORTING
+        !iv_input       TYPE clike
+      RETURNING
+        VALUE(rt_email) TYPE stringtab .
+    CLASS-METHODS get_default_receiver
+      RETURNING
+        VALUE(rt_receiver) TYPE stringtab .
+  PROTECTED SECTION.
+  PRIVATE SECTION.
 ENDCLASS.
 
 
 
-CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
+CLASS ZCL_ZA2XH_EMAIL_POPUP IMPLEMENTATION.
+
+
+  METHOD class_constructor.
+    gv_wd_comp_id = CAST cl_abap_refdescr( cl_abap_typedescr=>describe_by_data( go_wd_comp ) )->get_referenced_type( )->get_relative_name( ).
+    REPLACE 'IWCI_' IN gv_wd_comp_id WITH ''.
+  ENDMETHOD.
 
 
   METHOD get_default_receiver.
@@ -62,7 +71,7 @@ CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
           lv_default_descr        TYPE char1.
     FIELD-SYMBOLS: <lt_data> TYPE table.
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IT_DATA'
       IMPORTING
@@ -72,70 +81,70 @@ CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
     ASSIGN lr_data->* TO <lt_data>.
     CHECK: sy-subrc EQ 0.
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IT_FIELD'
       IMPORTING
         ev_value = lt_field
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_SUBJECT'
       IMPORTING
         ev_value = lv_subject
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_SENDER'
       IMPORTING
         ev_value = lv_sender
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IT_RECEIVER'
       IMPORTING
         ev_value = lt_receiver
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_FILENAME'
       IMPORTING
         ev_value = lv_filename
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_SHEET_TITLE'
       IMPORTING
         ev_value = lv_sheet_title
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_IMAGE_XSTRING'
       IMPORTING
         ev_value = lv_image_xstring
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_ADD_FIXEDVALUE_SHEET'
       IMPORTING
         ev_value = lv_add_fixedvalue_sheet
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_AUTO_COLUMN_WIDTH'
       IMPORTING
         ev_value = lv_auto_column_width
     ).
 
-    mo_param->get_value(
+    mo_event_data->get_value(
       EXPORTING
         iv_key   = 'IV_DEFAULT_DESCR'
       IMPORTING
@@ -161,23 +170,24 @@ CLASS ZCL_A2XH_EMAIL_POPUP IMPLEMENTATION.
 
 
   METHOD open_popup.
-    DATA: lo_comp_usage TYPE REF TO if_wd_component_usage,
-          lo_wd_comp    TYPE REF TO ziwci_a2xh_email_popup.
+    DATA: lo_comp_usage TYPE REF TO if_wd_component_usage.
 
-    cl_wdr_runtime_services=>get_component_usage(
-      EXPORTING
-        component            = wdr_task=>application->component
-        used_component_name  = 'ZA2XH_EMAIL_POPUP'
-        component_usage_name = 'ZA2XH_EMAIL_POPUP'
-        create_component     = abap_true
-        do_create            = abap_true
-      RECEIVING
-        component_usage      = lo_comp_usage
-    ).
+    IF go_wd_comp IS INITIAL.
+      cl_wdr_runtime_services=>get_component_usage(
+        EXPORTING
+          component            = wdr_task=>application->component
+          used_component_name  = gv_wd_comp_id
+          component_usage_name = gv_wd_comp_id
+          create_component     = abap_true
+          do_create            = abap_true
+        RECEIVING
+          component_usage      = lo_comp_usage
+      ).
+      go_wd_comp ?= lo_comp_usage->get_interface_controller( ).
+    ENDIF.
 
-    lo_wd_comp ?= lo_comp_usage->get_interface_controller( ).
-    lo_wd_comp->open_popup(
-        io_param = io_param
+    go_wd_comp->open_popup(
+        io_event_data = io_event_data
     ).
   ENDMETHOD.
 
