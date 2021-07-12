@@ -317,6 +317,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lr_data            TYPE REF TO data,
           lv_conversion      TYPE string,
           lv_local_ts        TYPE timestamp,
+          lv_alpha_out       TYPE string,
           lv_index_col       TYPE i,
           lv_index           TYPE i.
     FIELD-SYMBOLS: <ls_data>     TYPE data,
@@ -382,10 +383,10 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                                   is_table_settings = ls_table_settings ).
 **********************************************************************
 
-        " timestamp
+        " conversion exit.
         CREATE DATA lr_data LIKE LINE OF it_data.
         ASSIGN lr_data->* TO <ls_data>.
-        LOOP AT lt_field_catalog INTO ls_field_catalog WHERE abap_type = cl_abap_typedescr=>typekind_packed.
+        LOOP AT lt_field_catalog INTO ls_field_catalog.
           lv_index_col = sy-tabix.
           ASSIGN COMPONENT ls_field_catalog-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
           DESCRIBE FIELD <lv_data> EDIT MASK lv_conversion.
@@ -405,6 +406,25 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                     ip_column    = lv_index_col
                     ip_row       = lv_index
                     ip_value     = lv_local_ts
+                    ip_abap_type = cl_abap_typedescr=>typekind_char
+                ).
+              ENDIF.
+            ENDLOOP.
+          ELSEIF lv_conversion EQ '==ALPHA'.
+            LOOP AT it_data ASSIGNING <ls_data>.
+              lv_index = sy-tabix + 1.
+              ASSIGN COMPONENT ls_field_catalog-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              IF <lv_data> IS NOT INITIAL.
+                CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+                  EXPORTING
+                    input  = <lv_data>
+                  IMPORTING
+                    output = lv_alpha_out.
+                lo_worksheet->set_cell(
+                  EXPORTING
+                    ip_column    = lv_index_col
+                    ip_row       = lv_index
+                    ip_value     = lv_alpha_out
                     ip_abap_type = cl_abap_typedescr=>typekind_char
                 ).
               ENDIF.
@@ -651,7 +671,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
 
-        " timestamp
+        " conversion exit.
         LOOP AT lt_field INTO ls_field.
           ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
           DESCRIBE FIELD <lv_data> EDIT MASK lv_conversion.
@@ -662,6 +682,16 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
               IF <lv_data> IS NOT INITIAL.
                 PERFORM convert_to_utc_time IN PROGRAM saplsdc_cnv USING <lv_data> CHANGING <lv_data>.
               ENDIF.
+            ENDLOOP.
+          ELSEIF lv_conversion EQ '==ALPHA'.
+            LOOP AT et_data ASSIGNING <ls_data>.
+              lv_index = sy-tabix + 1.
+              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+                EXPORTING
+                  input  = <lv_data>
+                IMPORTING
+                  output = <lv_data>.
             ENDLOOP.
           ENDIF.
         ENDLOOP.

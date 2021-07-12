@@ -30,23 +30,28 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
 
 
   METHOD enh_cl_fpm_list_uibb_assist_at.
-    DATA: lt_field2      TYPE zcl_abap2xlsx_helper=>tt_field,
-          lt_field       TYPE zcl_abap2xlsx_helper=>tt_field,
-          ls_field       TYPE zcl_abap2xlsx_helper=>ts_field,
-          ls_field_usage TYPE fpmgb_s_fieldusage,
-          lo_p13n_column TYPE REF TO if_fpm_list_settings_column,
-          lv_column_name TYPE string.
-    FIELD-SYMBOLS: <lt_data> TYPE table.
+    DATA: lt_field2              TYPE zcl_abap2xlsx_helper=>tt_field,
+          lt_field               TYPE zcl_abap2xlsx_helper=>tt_field,
+          ls_field               TYPE zcl_abap2xlsx_helper=>ts_field,
+          ls_field_usage         TYPE fpmgb_s_fieldusage,
+          lo_context_data_s_type TYPE REF TO cl_abap_structdescr,
+          lo_context_data_t_type TYPE REF TO cl_abap_tabledescr,
+          lr_context_data        TYPE REF TO data,
+          lo_p13n_column         TYPE REF TO if_fpm_list_settings_column,
+          lv_column_name         TYPE string,
+          lv_conversion          TYPE string,
+          lv_index               TYPE i.
+    FIELD-SYMBOLS: <lt_data>         TYPE table,
+                   <ls_data>         TYPE data,
+                   <lv_data>         TYPE data,
+                   <lt_context_data> TYPE table,
+                   <ls_context_data> TYPE data,
+                   <lv_context_data> TYPE data.
 
     CHECK: gv_list_uibb_export_on EQ abap_true AND
            zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
 
     ASSIGN irt_result_data->* TO <lt_data>.
-
-    io_c_table->get_data_source( )->get_static_attributes_table(
-      IMPORTING
-        table = <lt_data>
-    ).
 
     zcl_abap2xlsx_helper=>get_fieldcatalog(
       EXPORTING
@@ -78,6 +83,26 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
       ls_field-fixed_values = ls_field_usage-fixed_values.
       APPEND ls_field TO lt_field.
     ENDLOOP.
+
+
+    lo_context_data_s_type = io_c_table->get_data_source( )->get_node_info( )->get_static_attributes_type( ).
+    lo_context_data_t_type = cl_abap_tabledescr=>create( lo_context_data_s_type ).
+    CREATE DATA lr_context_data TYPE HANDLE lo_context_data_t_type.
+    ASSIGN lr_context_data->* TO <lt_context_data>.
+
+    io_c_table->get_data_source( )->get_static_attributes_table(
+      IMPORTING
+        table = <lt_context_data>
+    ).
+*    MOVE-CORRESPONDING <lt_context_data> TO <lt_data>.
+    LOOP AT <lt_context_data> ASSIGNING <ls_context_data>.
+      lv_index = sy-tabix.
+      READ TABLE <lt_data> ASSIGNING <ls_data> INDEX lv_index.
+      CHECK: sy-subrc EQ 0.
+      MOVE-CORRESPONDING <ls_context_data> TO <ls_data>.
+    ENDLOOP.
+
+
 
     CASE iv_format.
       WHEN 'ZA2X'.
