@@ -6,6 +6,7 @@ CLASS zcl_za2xh_email_popup DEFINITION
   PUBLIC SECTION.
 
     DATA mo_event_data TYPE REF TO if_fpm_parameter .
+    DATA mo_comp_usage TYPE REF TO if_wd_component_usage .
     CLASS-DATA gv_wd_comp_id TYPE string READ-ONLY .
     CLASS-DATA go_wd_comp TYPE REF TO ziwci_a2xh_email_popup READ-ONLY .
 
@@ -14,6 +15,8 @@ CLASS zcl_za2xh_email_popup DEFINITION
       IMPORTING
         !io_event_data TYPE REF TO if_fpm_parameter OPTIONAL .
     METHODS on_ok .
+    METHODS on_close
+        FOR EVENT window_closed OF if_wd_window .
     CLASS-METHODS split_email_string
       IMPORTING
         !iv_input       TYPE clike
@@ -54,6 +57,11 @@ CLASS ZCL_ZA2XH_EMAIL_POPUP IMPLEMENTATION.
     IF lv_my_email IS NOT INITIAL.
       APPEND lv_my_email TO rt_receiver.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD on_close.
+    mo_comp_usage->delete_component( ).
   ENDMETHOD.
 
 
@@ -172,22 +180,22 @@ CLASS ZCL_ZA2XH_EMAIL_POPUP IMPLEMENTATION.
   METHOD open_popup.
     DATA: lo_comp_usage TYPE REF TO if_wd_component_usage.
 
-    IF go_wd_comp IS INITIAL.
-      cl_wdr_runtime_services=>get_component_usage(
-        EXPORTING
-          component            = wdr_task=>application->component
-          used_component_name  = gv_wd_comp_id
-          component_usage_name = gv_wd_comp_id
-          create_component     = abap_true
-          do_create            = abap_true
-        RECEIVING
-          component_usage      = lo_comp_usage
-      ).
-      go_wd_comp ?= lo_comp_usage->get_interface_controller( ).
-    ENDIF.
+    cl_wdr_runtime_services=>get_component_usage(
+      EXPORTING
+        component            = wdr_task=>application->component
+        used_component_name  = gv_wd_comp_id
+        component_usage_name = gv_wd_comp_id
+        create_component     = abap_true
+        do_create            = abap_true
+      RECEIVING
+        component_usage      = lo_comp_usage
+    ).
+
+    go_wd_comp ?= lo_comp_usage->get_interface_controller( ).
 
     go_wd_comp->open_popup(
         io_event_data = io_event_data
+        io_comp_usage = lo_comp_usage
     ).
   ENDMETHOD.
 

@@ -95,7 +95,8 @@ public section.
       value(RV_XSTRING) type XSTRING .
   class-methods FPM_UPLOAD_POPUP
     importing
-      !IV_CALLBACK_EVENT_ID type FPM_EVENT_ID default 'ZA2XH_UPLOAD' .
+      !IV_CALLBACK_EVENT_ID type FPM_EVENT_ID default 'ZA2XH_UPLOAD'
+      !IO_EVENT type ref to CL_FPM_EVENT optional .
   class-methods WD_UPLOAD_POPUP
     importing
       !IV_CALLBACK_ACTION type STRING
