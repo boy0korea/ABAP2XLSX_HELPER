@@ -23,7 +23,8 @@
       <item>          zlt_columns TYPE CL_FPM_GUIBB_BASE_RENDER=&gt;T_COLUMN.</item>
       <item/>
       <item>    IF me-&gt;mv_format CP &apos;Z*&apos;.</item>
-      <item>      zlt_columns = me-&gt;mo_tree_uibb_assist-&gt;mo_config_data-&gt;get_columns( iv_include_secondary_editors = abap_true ).</item>
+      <item>*      zlt_columns = me-&gt;mo_tree_uibb_assist-&gt;mo_config_data-&gt;get_columns( iv_include_secondary_editors = abap_true ).</item>
+      <item>      zlt_columns = me-&gt;mo_tree_uibb_assist-&gt;mo_config_data-&gt;get_columns( ).</item>
       <item>      me-&gt;create_result_data(</item>
       <item>        EXPORTING</item>
       <item>          irt_columns                = ref #( zlt_columns )</item>
