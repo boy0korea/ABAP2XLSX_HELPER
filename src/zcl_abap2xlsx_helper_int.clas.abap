@@ -313,7 +313,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lt_ddic_object     TYPE dd_x031l_table,
           ls_ddic_object     TYPE x031l,
           ls_ddic_object_ref TYPE x031l,
+          lv_amount_multiply TYPE i,
+          lv_amount          TYPE srmcurr,
           lv_amount_external TYPE bapicurr-bapicurr,
+          lo_cell_style      TYPE REF TO zcl_excel_style,
+          lv_cell_style_curr TYPE zexcel_cell_style,
           lr_data            TYPE REF TO data,
           lv_conversion      TYPE string,
           lv_local_ts        TYPE timestamp,
@@ -444,18 +448,56 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lv_index_col = sy-tabix.
           READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
           CHECK: sy-subrc EQ 0.
+
+          IF lv_cell_style_curr IS INITIAL.
+            lo_cell_style = lo_excel->add_new_style( ).
+            lo_cell_style->number_format->format_code = zcl_excel_style_number_format=>c_format_number_comma_sep1.
+            lv_cell_style_curr = lo_cell_style->get_guid( ).
+          ENDIF.
+
+          IF ls_ddic_object-decimals > 2.
+            lv_amount_multiply = 10 ** ( ls_ddic_object-decimals - 2 ).
+          ELSE.
+            CLEAR: lv_amount_multiply.
+          ENDIF.
+
           LOOP AT it_data ASSIGNING <ls_data>.
             lv_index = sy-tabix + 1.
+
+            lo_worksheet->set_cell_style(
+              EXPORTING
+                ip_column = lv_index_col
+                ip_row    = lv_index
+                ip_style  = lv_cell_style_curr
+            ).
+
             ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+            CHECK: <lv_data> IS NOT INITIAL.
             ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
-            IF <lv_data> IS NOT INITIAL AND
-               <lv_data_ref> IS NOT INITIAL AND
-               <lv_data_ref> <> 'USD' AND
-               <lv_data_ref> <> 'EUR'.
+            CHECK: <lv_data_ref> IS NOT INITIAL.
+            IF lv_amount_multiply IS INITIAL.
+              IF <lv_data_ref> <> 'USD' AND
+                 <lv_data_ref> <> 'EUR'.
+                CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
+                  EXPORTING
+                    currency        = CONV tcurc-waers( <lv_data_ref> )
+                    amount_internal = <lv_data>
+                  IMPORTING
+                    amount_external = lv_amount_external.
+                lo_worksheet->set_cell(
+                  EXPORTING
+                    ip_column    = lv_index_col
+                    ip_row       = lv_index
+                    ip_value     = lv_amount_external
+                    ip_abap_type = cl_abap_typedescr=>typekind_packed
+                ).
+              ENDIF.
+            ELSE.
+              lv_amount = <lv_data> * lv_amount_multiply.
               CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
                 EXPORTING
                   currency        = CONV tcurc-waers( <lv_data_ref> )
-                  amount_internal = <lv_data>
+                  amount_internal = lv_amount
                 IMPORTING
                   amount_external = lv_amount_external.
               lo_worksheet->set_cell(
@@ -527,34 +569,35 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
   METHOD convert_excel_to_abap.
 * http://www.abap2xlsx.org
-    DATA: lo_excel                    TYPE REF TO zcl_excel,
-          lo_reader                   TYPE REF TO zif_excel_reader,
-          lo_worksheet                TYPE REF TO zcl_excel_worksheet,
-          lv_excel                    TYPE xstring,
-          lt_field                    TYPE za2xh_t_fieldcatalog,
-          ls_field                    TYPE za2xh_s_fieldcatalog,
-          lv_highest_column           TYPE int4,
-          lv_highest_row              TYPE int4,
-          lv_column                   TYPE int4,
-          lv_col_str                  TYPE zexcel_cell_column_alpha,
-          lv_row                      TYPE int4,
-          lv_value                    TYPE zexcel_cell_value,
-          lv_date                     TYPE datum,
-          lv_time                     TYPE uzeit,
-          lv_char_row                 TYPE string,
-          lv_style_guid               TYPE zexcel_cell_style,
-          ls_stylemapping             TYPE zexcel_s_stylemapping,
-          lt_ddic_object              TYPE dd_x031l_table,
-          ls_ddic_object              TYPE x031l,
-          ls_ddic_object_ref          TYPE x031l,
-          lv_ddic_object_has_currency TYPE flag,
-          lv_amount_external          TYPE bapicurr-bapicurr,
-          lo_root                     TYPE REF TO cx_root,
-          lo_zcx_excel                TYPE REF TO zcx_excel,
-          lv_conversion               TYPE string,
-          lv_local_ts                 TYPE timestamp,
-          lv_index_col                TYPE i,
-          lv_index                    TYPE i.
+    DATA: lo_excel           TYPE REF TO zcl_excel,
+          lo_reader          TYPE REF TO zif_excel_reader,
+          lo_worksheet       TYPE REF TO zcl_excel_worksheet,
+          lv_excel           TYPE xstring,
+          lt_field           TYPE za2xh_t_fieldcatalog,
+          ls_field           TYPE za2xh_s_fieldcatalog,
+          lv_highest_column  TYPE int4,
+          lv_highest_row     TYPE int4,
+          lv_column          TYPE int4,
+          lv_col_str         TYPE zexcel_cell_column_alpha,
+          lv_row             TYPE int4,
+          lv_value           TYPE zexcel_cell_value,
+          lv_date            TYPE datum,
+          lv_time            TYPE uzeit,
+          lv_char_row        TYPE string,
+          lv_style_guid      TYPE zexcel_cell_style,
+          ls_stylemapping    TYPE zexcel_s_stylemapping,
+          lt_ddic_object     TYPE dd_x031l_table,
+          ls_ddic_object     TYPE x031l,
+          ls_ddic_object_ref TYPE x031l,
+          lv_amount_multiply TYPE i,
+          lv_amount          TYPE srmcurr,
+          lv_amount_external TYPE bapicurr-bapicurr,
+          lo_root            TYPE REF TO cx_root,
+          lo_zcx_excel       TYPE REF TO zcx_excel,
+          lv_conversion      TYPE string,
+          lv_local_ts        TYPE timestamp,
+          lv_index_col       TYPE i,
+          lv_index           TYPE i.
     FIELD-SYMBOLS: <ls_data>     TYPE data,
                    <lv_data>     TYPE data,
                    <lv_data_ref> TYPE data.
@@ -702,15 +745,22 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
           READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
           CHECK: sy-subrc EQ 0.
+
+          IF ls_ddic_object-decimals > 2.
+            lv_amount_multiply = 10 ** ( ls_ddic_object-decimals - 2 ).
+          ELSE.
+            CLEAR: lv_amount_multiply.
+          ENDIF.
+
           LOOP AT et_data ASSIGNING <ls_data>.
             lv_index = sy-tabix + 1.
             ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
-            IF <lv_data> IS NOT INITIAL.
-              ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
-              IF <lv_data_ref> IS NOT INITIAL AND
-                 <lv_data_ref> <> 'USD' AND
+            CHECK: <lv_data> IS NOT INITIAL.
+            ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
+            CHECK: <lv_data_ref> IS NOT INITIAL.
+            IF lv_amount_multiply IS INITIAL.
+              IF <lv_data_ref> <> 'USD' AND
                  <lv_data_ref> <> 'EUR'.
-
                 lv_amount_external = <lv_data>.
                 CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_INTERNAL'
                   EXPORTING
@@ -720,6 +770,16 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                   IMPORTING
                     amount_internal      = <lv_data>.
               ENDIF.
+            ELSE.
+              lv_amount_external = <lv_data>.
+              CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_INTERNAL'
+                EXPORTING
+                  currency             = CONV tcurc-waers( <lv_data_ref> )
+                  amount_external      = lv_amount_external
+                  max_number_of_digits = 23
+                IMPORTING
+                  amount_internal      = lv_amount.
+              <lv_data> = lv_amount / lv_amount_multiply.
             ENDIF.
           ENDLOOP.
         ENDLOOP.
