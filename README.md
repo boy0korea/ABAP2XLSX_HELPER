@@ -8,7 +8,7 @@ abap2xlsx helper
 ## Korean
 ### 필수 설치
 - [abap2xlsx](https://github.com/sapmentors/abap2xlsx)를 우선 설치하세요.
-### 아직 개발중입니다. 일부 동작합니다.
+### 아래의 메소드를 사용할 수 있습니다.
 - ZCL_ABAP2XLSX_HELPER=>EXCEL_DOWNLOAD
 <BR>인터널 테이블 내용을 엑셀 파일로 다운로드 합니다.<BR>
 - ZCL_ABAP2XLSX_HELPER=>EXCEL_EMAIL
@@ -35,9 +35,9 @@ abap2xlsx helper
 
   
 ## English
-### prerequisite
-- install [abap2xlsx](https://github.com/sapmentors/abap2xlsx)
-### this is not stable. you can use these methods.
+### Prerequisite
+- Install [abap2xlsx](https://github.com/sapmentors/abap2xlsx) first.
+### You can use these methods.
 - ZCL_ABAP2XLSX_HELPER=>EXCEL_DOWNLOAD
 <BR>convert abap internal table to excel file and start to download.<BR>
 - ZCL_ABAP2XLSX_HELPER=>EXCEL_EMAIL
