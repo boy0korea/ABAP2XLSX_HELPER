@@ -17,20 +17,14 @@
      <PROGRAMNAME>CL_FPM_TREE_RENDERING=========CP</PROGRAMNAME>
      <ENHMODE>D</ENHMODE>
      <FULL_NAME>\TY:CL_FPM_TREE_RENDERING\ME:RENDER_TOOLBAR_C_TABLE\SE:END\EI</FULL_NAME>
-     <SOURCE>
-      <item>* additional export menu.</item>
-      <item/>
-      <item>    IF lo_export_btn_choice IS BOUND.</item>
-      <item>      zcl_a2xh_fpm_enh=&gt;enh_cl_fpm_list_uibb_renderer_(</item>
-      <item>        EXPORTING</item>
-      <item>          io_export_btn_choice = lo_export_btn_choice</item>
-      <item>          iv_export_action     = lc_export_action</item>
-      <item>      ).</item>
-      <item>    ENDIF.</item>
-      <item/>
-     </SOURCE>
     </ENH_HOOK_IMPL>
    </ENHANCEMENTS>
+   <FILES>
+    <item>
+     <NAME>\TY:CL_FPM_TREE_RENDERING\ME:RENDER_TOOLBAR_C_TABLE\SE:END\EI</NAME>
+     <FILE>a09a3301</FILE>
+    </item>
+   </FILES>
    <SOTR>
     <item>
      <HEADER>
