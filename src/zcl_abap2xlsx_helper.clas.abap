@@ -280,6 +280,13 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         iv_key   = 'IV_CALLBACK_EVENT_ID'
         iv_value = iv_callback_event_id
     ).
+    IF io_event IS NOT INITIAL.
+      lo_event_data->set_value(
+        EXPORTING
+          iv_key   = 'IO_EVENT'
+          iv_value = io_event
+      ).
+    ENDIF.
 
     zcl_za2xh_upload_popup=>open_popup( lo_event_data ).
   ENDMETHOD.

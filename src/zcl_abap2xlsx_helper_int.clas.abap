@@ -669,7 +669,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         ENDWHILE.
 
 
-
+        CHECK: et_data IS NOT INITIAL.
 
         " conversion exit.
         LOOP AT lt_field INTO ls_field.
