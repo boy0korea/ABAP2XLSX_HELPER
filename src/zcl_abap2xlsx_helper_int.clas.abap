@@ -1047,7 +1047,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         EXPORTING
           i_filename  = lv_filename_string
           i_content   = iv_excel
-          i_mime_type = 'xlsx'.
+          i_mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'.
     ELSE.
       " GUI
       CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
