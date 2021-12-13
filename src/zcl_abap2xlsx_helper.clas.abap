@@ -1,129 +1,129 @@
-CLASS zcl_abap2xlsx_helper DEFINITION
-  PUBLIC
-  CREATE PUBLIC .
+class ZCL_ABAP2XLSX_HELPER definition
+  public
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    TYPES:
-      BEGIN OF ts_field,
+  types:
+    BEGIN OF ts_field,
         fieldname    TYPE fieldname,
         label_text   TYPE scrtext_l,
         fixed_values TYPE wdr_context_attr_value_list,
       END OF ts_field .
-    TYPES:
-      tt_field TYPE TABLE OF ts_field .
+  types:
+    tt_field TYPE TABLE OF ts_field .
 
-    CLASS-METHODS excel_download
-      IMPORTING
-        !it_data                 TYPE STANDARD TABLE
-        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_filename             TYPE clike OPTIONAL
-        !iv_sheet_title          TYPE clike OPTIONAL
-        !iv_image_xstring        TYPE xstring OPTIONAL
-        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
-        !iv_auto_column_width    TYPE flag DEFAULT abap_true
-        !iv_default_descr        TYPE c DEFAULT 'L'
-      EXPORTING
-        !ev_excel                TYPE xstring
-        !ev_error_text           TYPE string .
-    CLASS-METHODS excel_email
-      IMPORTING
-        !it_data                 TYPE STANDARD TABLE
-        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_subject              TYPE clike OPTIONAL
-        !iv_sender               TYPE clike OPTIONAL
-        !it_receiver             TYPE stringtab OPTIONAL
-        !iv_filename             TYPE clike OPTIONAL
-        !iv_sheet_title          TYPE clike OPTIONAL
-        !iv_image_xstring        TYPE xstring OPTIONAL
-        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
-        !iv_auto_column_width    TYPE flag DEFAULT abap_true
-        !iv_default_descr        TYPE c DEFAULT 'L' .
-    CLASS-METHODS excel_upload
-      IMPORTING
-        !iv_excel      TYPE xstring OPTIONAL
-        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_begin_row  TYPE int4 DEFAULT 2
-        !iv_sheet_no   TYPE int1 DEFAULT 1
-      EXPORTING
-        !et_data       TYPE STANDARD TABLE
-        !ev_error_text TYPE string .
-    CLASS-METHODS get_fieldcatalog
-      IMPORTING
-        !it_data          TYPE STANDARD TABLE
-        !iv_default_descr TYPE c DEFAULT 'L'
-      EXPORTING
-        !et_field         TYPE zcl_abap2xlsx_helper=>tt_field .
-    CLASS-METHODS convert_abap_to_excel
-      IMPORTING
-        !it_data                 TYPE STANDARD TABLE
-        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_sheet_title          TYPE clike OPTIONAL
-        !iv_image_xstring        TYPE xstring OPTIONAL
-        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
-        !iv_auto_column_width    TYPE flag DEFAULT abap_true
-        !iv_default_descr        TYPE c DEFAULT 'L'
-      EXPORTING
-        !ev_excel                TYPE xstring
-        !ev_error_text           TYPE string .
-    CLASS-METHODS convert_json_to_excel
-      IMPORTING
-        !iv_data_json            TYPE string
-        !it_ddic_object          TYPE dd_x031l_table
-        !it_field                TYPE zcl_abap2xlsx_helper=>tt_field
-        !iv_sheet_title          TYPE clike OPTIONAL
-        !iv_image_xstring        TYPE xstring OPTIONAL
-        !iv_add_fixedvalue_sheet TYPE flag DEFAULT abap_true
-        !iv_auto_column_width    TYPE flag DEFAULT abap_true
-        !iv_default_descr        TYPE c DEFAULT 'L'
-      EXPORTING
-        !ev_excel                TYPE xstring
-        !ev_error_text           TYPE string .
-    CLASS-METHODS convert_excel_to_abap
-      IMPORTING
-        !iv_excel      TYPE xstring
-        !it_field      TYPE zcl_abap2xlsx_helper=>tt_field OPTIONAL
-        !iv_begin_row  TYPE int4 DEFAULT 2
-        !iv_sheet_no   TYPE int1 DEFAULT 1
-      EXPORTING
-        !et_data       TYPE STANDARD TABLE
-        !ev_error_text TYPE string .
-    CLASS-METHODS get_xstring_from_smw0
-      IMPORTING
-        !iv_smw0          TYPE wwwdata-objid
-      RETURNING
-        VALUE(rv_xstring) TYPE xstring .
-    CLASS-METHODS fpm_upload_popup
-      IMPORTING
-        !iv_callback_event_id TYPE fpm_event_id DEFAULT 'ZA2XH_UPLOAD'
-        !io_event             TYPE REF TO cl_fpm_event OPTIONAL .
-    CLASS-METHODS wd_upload_popup
-      IMPORTING
-        !iv_callback_action TYPE string
-        !io_view            TYPE REF TO if_wd_view_controller .
-    CLASS-METHODS default_excel_filename
-      RETURNING
-        VALUE(rv_filename) TYPE string .
-    CLASS-METHODS get_ddic_fixed_values
-      IMPORTING
-        !io_type      TYPE REF TO cl_abap_typedescr
-      RETURNING
-        VALUE(rt_ddl) TYPE wdr_context_attr_value_list .
-    CLASS-METHODS test .
-    CLASS-METHODS is_abap2xlsx_installed
-      IMPORTING
-        !iv_with_message    TYPE flag DEFAULT abap_true
-      RETURNING
-        VALUE(rv_installed) TYPE flag .
-    CLASS-METHODS message
-      IMPORTING
-        !iv_error_text TYPE clike .
-    CLASS-METHODS check_install
-      IMPORTING
-        !iv_class_name      TYPE clike
-        !iv_error_text      TYPE clike OPTIONAL
-      RETURNING
-        VALUE(rv_installed) TYPE flag .
+  class-methods EXCEL_DOWNLOAD
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_FILENAME type CLIKE optional
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !EV_EXCEL type XSTRING
+      !EV_ERROR_TEXT type STRING .
+  class-methods EXCEL_EMAIL
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_SUBJECT type CLIKE optional
+      !IV_SENDER type CLIKE optional
+      !IT_RECEIVER type STRINGTAB optional
+      !IV_FILENAME type CLIKE optional
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L' .
+  class-methods EXCEL_UPLOAD
+    importing
+      !IV_EXCEL type XSTRING optional
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_BEGIN_ROW type INT4 default 2
+      !IV_SHEET_NO type INT1 default 1
+    exporting
+      !ET_DATA type STANDARD TABLE
+      !EV_ERROR_TEXT type STRING .
+  class-methods GET_FIELDCATALOG
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
+  class-methods CONVERT_ABAP_TO_EXCEL
+    importing
+      !IT_DATA type STANDARD TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !EV_EXCEL type XSTRING
+      !EV_ERROR_TEXT type STRING .
+  class-methods CONVERT_JSON_TO_EXCEL
+    importing
+      !IV_DATA_JSON type STRING
+      !IT_DDIC_OBJECT type DD_X031L_TABLE
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
+      !IV_SHEET_TITLE type CLIKE optional
+      !IV_IMAGE_XSTRING type XSTRING optional
+      !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
+      !IV_AUTO_COLUMN_WIDTH type FLAG default ABAP_TRUE
+      !IV_DEFAULT_DESCR type C default 'L'
+    exporting
+      !EV_EXCEL type XSTRING
+      !EV_ERROR_TEXT type STRING .
+  class-methods CONVERT_EXCEL_TO_ABAP
+    importing
+      !IV_EXCEL type XSTRING
+      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IV_BEGIN_ROW type INT4 default 2
+      !IV_SHEET_NO type INT1 default 1
+    exporting
+      !ET_DATA type STANDARD TABLE
+      !EV_ERROR_TEXT type STRING .
+  class-methods GET_XSTRING_FROM_SMW0
+    importing
+      !IV_SMW0 type WWWDATA-OBJID
+    returning
+      value(RV_XSTRING) type XSTRING .
+  class-methods FPM_UPLOAD_POPUP
+    importing
+      !IV_CALLBACK_EVENT_ID type CLIKE default 'ZA2XH_UPLOAD'
+      !IO_EVENT_ORIG type ref to CL_FPM_EVENT optional .
+  class-methods WD_UPLOAD_POPUP
+    importing
+      !IV_CALLBACK_ACTION type CLIKE
+      !IO_VIEW type ref to IF_WD_VIEW_CONTROLLER .
+  class-methods DEFAULT_EXCEL_FILENAME
+    returning
+      value(RV_FILENAME) type STRING .
+  class-methods GET_DDIC_FIXED_VALUES
+    importing
+      !IO_TYPE type ref to CL_ABAP_TYPEDESCR
+    returning
+      value(RT_DDL) type WDR_CONTEXT_ATTR_VALUE_LIST .
+  class-methods TEST .
+  class-methods IS_ABAP2XLSX_INSTALLED
+    importing
+      !IV_WITH_MESSAGE type FLAG default ABAP_TRUE
+    returning
+      value(RV_INSTALLED) type FLAG .
+  class-methods MESSAGE
+    importing
+      !IV_ERROR_TEXT type CLIKE .
+  class-methods CHECK_INSTALL
+    importing
+      !IV_CLASS_NAME type CLIKE
+      !IV_ERROR_TEXT type CLIKE optional
+    returning
+      value(RV_INSTALLED) type FLAG .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
@@ -271,24 +271,15 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
 
 
   METHOD fpm_upload_popup.
-    DATA: lo_event_data TYPE REF TO if_fpm_parameter.
-
-    CREATE OBJECT lo_event_data TYPE cl_fpm_parameter.
-
-    lo_event_data->set_value(
+    zcl_za2xh_upload_popup=>fpm_popup(
       EXPORTING
-        iv_key   = 'IV_CALLBACK_EVENT_ID'
-        iv_value = iv_callback_event_id
+*        io_event_data        = io_event_data
+        io_event_orig        = io_event_orig
+        iv_callback_event_id = iv_callback_event_id
     ).
-    IF io_event IS NOT INITIAL.
-      lo_event_data->set_value(
-        EXPORTING
-          iv_key   = 'IO_EVENT'
-          iv_value = io_event
-      ).
-    ENDIF.
+*@78\QImporting@  IV_FILE_NAME  TYPE FPM_FILE_NAME  File Name
+*@78\QImporting@  IV_FILE_CONTENT TYPE FPM_FILE_CONTENT File Content
 
-    zcl_za2xh_upload_popup=>open_popup( lo_event_data ).
   ENDMETHOD.
 
 
@@ -473,22 +464,14 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
 
 
   METHOD wd_upload_popup.
-    DATA: lo_event_data TYPE REF TO if_fpm_parameter.
-
-    CREATE OBJECT lo_event_data TYPE cl_fpm_parameter.
-
-    lo_event_data->set_value(
+    zcl_za2xh_upload_popup=>wd_popup(
       EXPORTING
-        iv_key   = 'IV_CALLBACK_ACTION'
-        iv_value = iv_callback_action
+*        io_event_data      = io_event_data
+        io_view            = io_view
+        iv_callback_action = iv_callback_action
     ).
+*@78\QImporting@  IV_FILE_NAME  TYPE FPM_FILE_NAME  File Name
+*@78\QImporting@  IV_FILE_CONTENT TYPE FPM_FILE_CONTENT File Content
 
-    lo_event_data->set_value(
-      EXPORTING
-        iv_key   = 'IO_VIEW'
-        iv_value = CAST cl_wdr_view( io_view )
-    ).
-
-    zcl_za2xh_upload_popup=>open_popup( lo_event_data ).
   ENDMETHOD.
 ENDCLASS.

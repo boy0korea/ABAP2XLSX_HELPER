@@ -1,25 +1,35 @@
-CLASS zcl_za2xh_upload_popup DEFINITION
-  PUBLIC
-  INHERITING FROM cl_wd_component_assistance
-  CREATE PUBLIC .
+class ZCL_ZA2XH_UPLOAD_POPUP definition
+  public
+  inheriting from CL_WD_COMPONENT_ASSISTANCE
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    DATA mo_event_data TYPE REF TO if_fpm_parameter .
-    DATA mo_comp_usage TYPE REF TO if_wd_component_usage .
-    CLASS-DATA gv_wd_comp_id TYPE string READ-ONLY .
-    CLASS-DATA go_wd_comp TYPE REF TO ziwci_a2xh_upload_popup READ-ONLY .
+  class-data GO_WD_COMP type ref to ZIWCI_A2XH_UPLOAD_POPUP read-only .
+  class-data GV_WD_COMP_ID type STRING read-only .
+  data MO_EVENT_DATA type ref to IF_FPM_PARAMETER .
+  data MO_COMP_USAGE type ref to IF_WD_COMPONENT_USAGE .
 
-    CLASS-METHODS class_constructor .
-    CLASS-METHODS open_popup
-      IMPORTING
-        !io_event_data TYPE REF TO if_fpm_parameter .
-    METHODS on_close
-        FOR EVENT window_closed OF if_wd_window .
-    METHODS on_ok
-      IMPORTING
-        !iv_excel    TYPE xstring
-        !iv_filename TYPE string .
+  class-methods CLASS_CONSTRUCTOR .
+  class-methods FPM_POPUP
+    importing
+      !IO_EVENT_DATA type ref to IF_FPM_PARAMETER optional
+      !IO_EVENT_ORIG type ref to CL_FPM_EVENT optional
+      !IV_CALLBACK_EVENT_ID type CLIKE .
+  methods ON_CLOSE
+    for event WINDOW_CLOSED of IF_WD_WINDOW .
+  methods ON_OK
+    importing
+      !IV_FILE_NAME type FPM_FILE_NAME
+      !IV_FILE_CONTENT type FPM_FILE_CONTENT .
+  class-methods OPEN_POPUP
+    importing
+      !IO_EVENT_DATA type ref to IF_FPM_PARAMETER .
+  class-methods WD_POPUP
+    importing
+      !IO_EVENT_DATA type ref to IF_FPM_PARAMETER optional
+      !IO_VIEW type ref to IF_WD_VIEW_CONTROLLER
+      !IV_CALLBACK_ACTION type CLIKE .
   PROTECTED SECTION.
 
     METHODS do_callback .
@@ -38,18 +48,18 @@ CLASS ZCL_ZA2XH_UPLOAD_POPUP IMPLEMENTATION.
 
 
   METHOD do_callback.
-    DATA: lv_event_id    TYPE fpm_event_id,
-          lo_fpm         TYPE REF TO if_fpm,
-          lo_event       TYPE REF TO cl_fpm_event,
-          lo_event_start TYPE REF TO cl_fpm_event,
-          lt_key         TYPE TABLE OF string,
-          lv_key         TYPE string,
-          lr_value       TYPE REF TO data,
-          lv_action      TYPE string,
-          lo_view        TYPE REF TO cl_wdr_view,
-          lo_action      TYPE REF TO if_wdr_action,
-          lt_param       TYPE wdr_name_value_list,
-          ls_param       TYPE wdr_name_value.
+    DATA: lv_event_id   TYPE fpm_event_id,
+          lo_fpm        TYPE REF TO if_fpm,
+          lo_event      TYPE REF TO cl_fpm_event,
+          lo_event_orig TYPE REF TO cl_fpm_event,
+          lt_key        TYPE TABLE OF string,
+          lv_key        TYPE string,
+          lr_value      TYPE REF TO data,
+          lv_action     TYPE string,
+          lo_view       TYPE REF TO cl_wdr_view,
+          lo_action     TYPE REF TO if_wdr_action,
+          lt_param      TYPE wdr_name_value_list,
+          ls_param      TYPE wdr_name_value.
 
 
 **********************************************************************
@@ -73,12 +83,12 @@ CLASS ZCL_ZA2XH_UPLOAD_POPUP IMPLEMENTATION.
 
       mo_event_data->get_value(
         EXPORTING
-          iv_key   = 'IO_EVENT'
+          iv_key   = 'IO_EVENT_ORIG'
         IMPORTING
-          ev_value = lo_event_start
+          ev_value = lo_event_orig
       ).
-      IF lo_event_start IS NOT INITIAL.
-        lo_event->ms_source_uibb = lo_event_start->ms_source_uibb.
+      IF lo_event_orig IS NOT INITIAL.
+        lo_event->ms_source_uibb = lo_event_orig->ms_source_uibb.
       ENDIF.
 
       lo_fpm->raise_event( lo_event ).
@@ -195,5 +205,64 @@ CLASS ZCL_ZA2XH_UPLOAD_POPUP IMPLEMENTATION.
         io_event_data = io_event_data
         io_comp_usage = lo_comp_usage
     ).
+  ENDMETHOD.
+
+
+  METHOD fpm_popup.
+    DATA: lo_event_data TYPE REF TO if_fpm_parameter.
+
+    IF io_event_data IS NOT INITIAL.
+      lo_event_data = io_event_data.
+    ELSE.
+      CREATE OBJECT lo_event_data TYPE cl_fpm_parameter.
+    ENDIF.
+
+    lo_event_data->set_value(
+      EXPORTING
+        iv_key   = 'IV_CALLBACK_EVENT_ID'
+        iv_value = iv_callback_event_id
+    ).
+
+    IF io_event_orig IS NOT INITIAL.
+      lo_event_data->set_value(
+        EXPORTING
+          iv_key   = 'IO_EVENT_ORIG'
+          iv_value = io_event_orig
+      ).
+    ENDIF.
+
+
+    open_popup( lo_event_data ).
+*@78\QImporting@  IV_FILE_NAME  TYPE FPM_FILE_NAME  File Name
+*@78\QImporting@  IV_FILE_CONTENT TYPE FPM_FILE_CONTENT File Content
+
+  ENDMETHOD.
+
+
+  METHOD wd_popup.
+    DATA: lo_event_data TYPE REF TO if_fpm_parameter.
+
+    IF io_event_data IS NOT INITIAL.
+      lo_event_data = io_event_data.
+    ELSE.
+      CREATE OBJECT lo_event_data TYPE cl_fpm_parameter.
+    ENDIF.
+
+    lo_event_data->set_value(
+      EXPORTING
+        iv_key   = 'IV_CALLBACK_ACTION'
+        iv_value = iv_callback_action
+    ).
+
+    lo_event_data->set_value(
+      EXPORTING
+        iv_key   = 'IO_VIEW'
+        iv_value = CAST cl_wdr_view( io_view )
+    ).
+
+    open_popup( lo_event_data ).
+*@78\QImporting@  IV_FILE_NAME  TYPE FPM_FILE_NAME  File Name
+*@78\QImporting@  IV_FILE_CONTENT TYPE FPM_FILE_CONTENT File Content
+
   ENDMETHOD.
 ENDCLASS.
