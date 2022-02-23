@@ -605,47 +605,58 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
             ).
 
             IF lv_style_guid IS NOT INITIAL AND lv_value IS NOT INITIAL.
-              " Read style attributes
               ls_stylemapping = lo_excel->get_style_to_guid( lv_style_guid ).
               lv_format_code = ls_stylemapping-complete_style-number_format-format_code.
+              " https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
               IF lv_format_code CS ';'.
                 lv_format_code = lv_format_code(sy-fdpos).
               ENDIF.
-              CASE lv_format_code.
-                WHEN zcl_excel_style_number_format=>c_format_date_ddmmyyyy
-                  OR zcl_excel_style_number_format=>c_format_date_ddmmyyyydot
-                  OR zcl_excel_style_number_format=>c_format_date_dmminus
-                  OR zcl_excel_style_number_format=>c_format_date_dmyminus
-                  OR zcl_excel_style_number_format=>c_format_date_dmyslash
-                  OR zcl_excel_style_number_format=>c_format_date_myminus
-                  OR zcl_excel_style_number_format=>c_format_date_std
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx14
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx15
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx16
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx17
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx22
-                  OR zcl_excel_style_number_format=>c_format_date_yymmdd
-                  OR zcl_excel_style_number_format=>c_format_date_yymmddminus
-                  OR zcl_excel_style_number_format=>c_format_date_yymmddslash
-                  OR zcl_excel_style_number_format=>c_format_date_yyyymmdd
-                  OR zcl_excel_style_number_format=>c_format_date_yyyymmddminus
-                  OR zcl_excel_style_number_format=>c_format_date_yyyymmddslash.
+*              CASE lv_format_code.
+*                WHEN zcl_excel_style_number_format=>c_format_date_ddmmyyyy
+*                  OR zcl_excel_style_number_format=>c_format_date_ddmmyyyydot
+*                  OR zcl_excel_style_number_format=>c_format_date_dmminus
+*                  OR zcl_excel_style_number_format=>c_format_date_dmyminus
+*                  OR zcl_excel_style_number_format=>c_format_date_dmyslash
+*                  OR zcl_excel_style_number_format=>c_format_date_myminus
+*                  OR zcl_excel_style_number_format=>c_format_date_std
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx14
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx15
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx16
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx17
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx22
+*                  OR zcl_excel_style_number_format=>c_format_date_yymmdd
+*                  OR zcl_excel_style_number_format=>c_format_date_yymmddminus
+*                  OR zcl_excel_style_number_format=>c_format_date_yymmddslash
+*                  OR zcl_excel_style_number_format=>c_format_date_yyyymmdd
+*                  OR zcl_excel_style_number_format=>c_format_date_yyyymmddminus
+*                  OR zcl_excel_style_number_format=>c_format_date_yyyymmddslash.
+*                  " Convert excel date to ABAP date
+*                  lv_value = zcl_excel_common=>excel_string_to_date( lv_value ).
+*                WHEN zcl_excel_style_number_format=>c_format_date_time1
+*                  OR zcl_excel_style_number_format=>c_format_date_time2
+*                  OR zcl_excel_style_number_format=>c_format_date_time3
+*                  OR zcl_excel_style_number_format=>c_format_date_time4
+*                  OR zcl_excel_style_number_format=>c_format_date_time5
+*                  OR zcl_excel_style_number_format=>c_format_date_time6
+*                  OR zcl_excel_style_number_format=>c_format_date_time7
+*                  OR zcl_excel_style_number_format=>c_format_date_time8
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx45
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx46
+*                  OR zcl_excel_style_number_format=>c_format_date_xlsx47.
+*                  " Convert excel time to ABAP time
+*                  lv_value = zcl_excel_common=>excel_string_to_time( lv_value ).
+*              ENDCASE.
+              IF lv_format_code NA '#?'.
+                " Remove color pattern
+                REPLACE ALL OCCURRENCES OF REGEX '\[[^]]+\]' IN lv_format_code WITH ''.
+                IF lv_format_code CA 'yd'.
                   " Convert excel date to ABAP date
                   lv_value = zcl_excel_common=>excel_string_to_date( lv_value ).
-                WHEN zcl_excel_style_number_format=>c_format_date_time1
-                  OR zcl_excel_style_number_format=>c_format_date_time2
-                  OR zcl_excel_style_number_format=>c_format_date_time3
-                  OR zcl_excel_style_number_format=>c_format_date_time4
-                  OR zcl_excel_style_number_format=>c_format_date_time5
-                  OR zcl_excel_style_number_format=>c_format_date_time6
-                  OR zcl_excel_style_number_format=>c_format_date_time7
-                  OR zcl_excel_style_number_format=>c_format_date_time8
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx45
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx46
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx47.
+                ELSEIF lv_format_code CA 'hs'.
                   " Convert excel time to ABAP time
                   lv_value = zcl_excel_common=>excel_string_to_time( lv_value ).
-              ENDCASE.
+                ENDIF.
+              ENDIF.
             ENDIF.
 
             CONDENSE lv_value.
