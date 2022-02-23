@@ -175,13 +175,13 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       CLEAR: lt_ddl.
 
 
-      " 1. get from it_field-fxied_values
+      " 1. Get from it_field-fxied_values
       READ TABLE it_field INTO ls_field INDEX lv_index_col.
       IF sy-subrc EQ 0.
         lt_ddl = ls_field-fixed_values.
       ENDIF.
 
-      " 2. get from ddic domain fixed value
+      " 2. Get from ddic domain fixed value
       IF lt_ddl IS INITIAL.
         READ TABLE lt_comp_view INTO ls_comp_view WITH KEY name = ls_field_catalog-fieldname BINARY SEARCH.
         lt_ddl = zcl_abap2xlsx_helper=>get_ddic_fixed_values( ls_comp_view-type ).
@@ -190,7 +190,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       CHECK: lt_ddl IS NOT INITIAL.
       lv_lines_ddl = lines( lt_ddl ) + 1.
 
-      " create fv-sheet
+      " Create fv-sheet
       lv_sheet_title_fv = ls_field_catalog-fieldname.
       lo_worksheet_fv = io_excel->get_worksheet_by_name( lv_sheet_title_fv ).
       IF lo_worksheet_fv IS INITIAL.
@@ -212,7 +212,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      " add validation
+      " Add validation
       lo_data_validation = lo_worksheet->add_new_data_validation( ).
       lo_data_validation->type = zcl_excel_data_validation=>c_type_list.
       lo_data_validation->allowblank = abap_true.
@@ -223,7 +223,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       lo_data_validation->cell_row_to = lv_lines_data.
 
       IF iv_header_row_index IS NOT INITIAL AND lo_worksheet_fv->zif_excel_sheet_properties~hidden IS INITIAL.
-        " link to fv-sheet @ header
+        " Link to fv-sheet @ header
         lo_worksheet->get_cell(
           EXPORTING
             ip_column  = lo_data_validation->cell_column
@@ -339,12 +339,12 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         lo_worksheet = lo_excel->get_active_worksheet( ).
         lo_worksheet->set_title( ip_title = lv_sheet_title ).
 
-        " table settings
+        " Table settings
         ls_table_settings-table_style       = zcl_excel_table=>builtinstyle_medium2.
         ls_table_settings-show_row_stripes  = abap_true.
         ls_table_settings-nofilters         = abap_false.
 
-        " field catalog
+        " Field catalog
         lt_field_catalog = zcl_excel_common=>get_fieldcatalog( ip_table = it_data ).
         IF it_field IS NOT INITIAL.
           lt_field_catalog2 = lt_field_catalog.
@@ -383,7 +383,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                                   is_table_settings = ls_table_settings ).
 **********************************************************************
 
-        " conversion exit.
+        " Apply conversion exit.
         CREATE DATA lr_data LIKE LINE OF it_data.
         ASSIGN lr_data->* TO <ls_data>.
         LOOP AT lt_field_catalog INTO ls_field_catalog.
@@ -432,7 +432,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           ENDIF.
         ENDLOOP.
 
-        " currency
+        " Apply currency
         IF it_ddic_object IS NOT INITIAL.
           lt_ddic_object = it_ddic_object.
         ELSE.
@@ -503,7 +503,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           ).
         ENDIF.
 
-        "freeze column headers when scrolling
+        " Freeze column headers when scrolling
         lo_worksheet->freeze_panes( ip_num_rows = 1 ).
 
         " Create output
@@ -533,17 +533,16 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lv_excel                    TYPE xstring,
           lt_field                    TYPE za2xh_t_fieldcatalog,
           ls_field                    TYPE za2xh_s_fieldcatalog,
-          lv_highest_column           TYPE int4,
-          lv_highest_row              TYPE int4,
-          lv_column                   TYPE int4,
+          lv_highest_column           TYPE zexcel_cell_column,
+          lv_column                   TYPE zexcel_cell_column,
           lv_col_str                  TYPE zexcel_cell_column_alpha,
-          lv_row                      TYPE int4,
-          lv_value                    TYPE zexcel_cell_value,
-          lv_date                     TYPE datum,
-          lv_time                     TYPE uzeit,
+          lv_highest_row              TYPE zexcel_cell_row,
+          lv_row                      TYPE zexcel_cell_row,
           lv_char_row                 TYPE string,
+          lv_value                    TYPE zexcel_cell_value,
           lv_style_guid               TYPE zexcel_cell_style,
           ls_stylemapping             TYPE zexcel_s_stylemapping,
+          lv_format_code              TYPE zexcel_number_format,
           lt_ddic_object              TYPE dd_x031l_table,
           ls_ddic_object              TYPE x031l,
           ls_ddic_object_ref          TYPE x031l,
@@ -582,7 +581,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         ENDIF.
 
         CREATE OBJECT lo_reader TYPE zcl_excel_reader_2007.
-        lo_excel = lo_reader->load( lv_excel  ). "Load data into reader
+        lo_excel = lo_reader->load( lv_excel ).
         lo_excel->set_active_sheet_index( iv_sheet_no ).
         lo_worksheet = lo_excel->get_active_worksheet( ).
 
@@ -602,12 +601,17 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                 ip_row    = lv_row
               IMPORTING
                 ep_value  = lv_value
-                ep_guid   = lv_style_guid ).
+                ep_guid   = lv_style_guid
+            ).
 
             IF lv_style_guid IS NOT INITIAL AND lv_value IS NOT INITIAL.
               " Read style attributes
               ls_stylemapping = lo_excel->get_style_to_guid( lv_style_guid ).
-              CASE ls_stylemapping-complete_style-number_format-format_code.
+              lv_format_code = ls_stylemapping-complete_style-number_format-format_code.
+              IF lv_format_code CS ';'.
+                lv_format_code = lv_format_code(sy-fdpos).
+              ENDIF.
+              CASE lv_format_code.
                 WHEN zcl_excel_style_number_format=>c_format_date_ddmmyyyy
                   OR zcl_excel_style_number_format=>c_format_date_ddmmyyyydot
                   OR zcl_excel_style_number_format=>c_format_date_dmminus
@@ -620,9 +624,6 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                   OR zcl_excel_style_number_format=>c_format_date_xlsx16
                   OR zcl_excel_style_number_format=>c_format_date_xlsx17
                   OR zcl_excel_style_number_format=>c_format_date_xlsx22
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx45
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx46
-                  OR zcl_excel_style_number_format=>c_format_date_xlsx47
                   OR zcl_excel_style_number_format=>c_format_date_yymmdd
                   OR zcl_excel_style_number_format=>c_format_date_yymmddminus
                   OR zcl_excel_style_number_format=>c_format_date_yymmddslash
@@ -630,8 +631,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                   OR zcl_excel_style_number_format=>c_format_date_yyyymmddminus
                   OR zcl_excel_style_number_format=>c_format_date_yyyymmddslash.
                   " Convert excel date to ABAP date
-                  lv_date = zcl_excel_common=>excel_string_to_date( lv_value ).
-                  lv_value = lv_date.
+                  lv_value = zcl_excel_common=>excel_string_to_date( lv_value ).
                 WHEN zcl_excel_style_number_format=>c_format_date_time1
                   OR zcl_excel_style_number_format=>c_format_date_time2
                   OR zcl_excel_style_number_format=>c_format_date_time3
@@ -640,10 +640,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                   OR zcl_excel_style_number_format=>c_format_date_time6
                   OR zcl_excel_style_number_format=>c_format_date_time7
                   OR zcl_excel_style_number_format=>c_format_date_time8
-                  OR 'h:mm:ss;@'.
+                  OR zcl_excel_style_number_format=>c_format_date_xlsx45
+                  OR zcl_excel_style_number_format=>c_format_date_xlsx46
+                  OR zcl_excel_style_number_format=>c_format_date_xlsx47.
                   " Convert excel time to ABAP time
-                  lv_time = zcl_excel_common=>excel_string_to_time( lv_value ).
-                  lv_value = lv_time.
+                  lv_value = zcl_excel_common=>excel_string_to_time( lv_value ).
               ENDCASE.
             ENDIF.
 
@@ -661,7 +662,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
             lv_column = lv_column + 1.
           ENDWHILE.
 
-          " delete empty line
+          " Delete empty line
           IF <ls_data> IS INITIAL.
             DELETE et_data INDEX lines( et_data ).
           ENDIF.
@@ -671,7 +672,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
         CHECK: et_data IS NOT INITIAL.
 
-        " conversion exit.
+        " Apply conversion exit.
         LOOP AT lt_field INTO ls_field.
           ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
           DESCRIBE FIELD <lv_data> EDIT MASK lv_conversion.
@@ -698,7 +699,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
         lt_ddic_object = get_ddic_object( et_data ).
 
-        " currency
+        " Apply currency
         LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
           READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
           CHECK: sy-subrc EQ 0.
@@ -978,8 +979,8 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
         RECEIVING
           p_object     = rt_ddic_object
         EXCEPTIONS
-          not_found    = 1        " Type could not be found
-          no_ddic_type = 2        " Typ is not a dictionary type
+          not_found    = 1
+          no_ddic_type = 2
           OTHERS       = 3
       ).
     ENDIF.
@@ -1028,6 +1029,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
   METHOD start_download.
+    CONSTANTS: lc_xlsx_mime TYPE string VALUE 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'.
     DATA: lv_filename_string   TYPE string,
           lv_filename_path     TYPE string,
           lv_filename_fullpath TYPE string,
@@ -1043,11 +1045,12 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
     IF wdr_task=>application IS NOT INITIAL.
       " WD or FPM
-      CALL METHOD cl_wd_runtime_services=>attach_file_to_response
+      cl_wd_runtime_services=>attach_file_to_response(
         EXPORTING
-          i_filename  = lv_filename_string
-          i_content   = iv_excel
-          i_mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'.
+          i_filename      = lv_filename_string
+          i_content       = iv_excel
+          i_mime_type     = lc_xlsx_mime
+      ).
     ELSE.
       " GUI
       CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
@@ -1206,8 +1209,6 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
       CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
         EXPORTING
           input_length = lv_filelength
-*         first_line   = 0
-*         last_line    = 0
         IMPORTING
           buffer       = ev_excel
         TABLES
