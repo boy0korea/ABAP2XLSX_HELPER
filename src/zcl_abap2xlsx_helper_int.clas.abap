@@ -648,8 +648,8 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 *              ENDCASE.
               IF lv_format_code NA '#?'.
                 " Remove color pattern
-                REPLACE ALL OCCURRENCES OF REGEX '\[[^]]+\]' IN lv_format_code WITH ''.
-                IF lv_format_code CA 'yd'.
+                REPLACE ALL OCCURRENCES OF REGEX '\[\L[^]]*\]' IN lv_format_code WITH ''.
+                IF lv_format_code CA 'yd' OR lv_format_code EQ zcl_excel_style_number_format=>c_format_date_std.
                   " Convert excel date to ABAP date
                   lv_value = zcl_excel_common=>excel_string_to_date( lv_value ).
                 ELSEIF lv_format_code CA 'hs'.
