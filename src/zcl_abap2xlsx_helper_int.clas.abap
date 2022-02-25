@@ -80,6 +80,11 @@ CLASS zcl_abap2xlsx_helper_int DEFINITION
       EXPORTING
         !et_data       TYPE STANDARD TABLE
         !ev_error_text TYPE string .
+    CLASS-METHODS adjust_date_time_to_abap
+      IMPORTING
+        !io_worksheet TYPE REF TO zcl_excel_worksheet
+      RAISING
+        zcx_excel .
     CLASS-METHODS get_xstring_from_smw0
       IMPORTING
         !iv_smw0          TYPE wwwdata-objid
@@ -313,29 +318,29 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           lt_ddic_object     TYPE dd_x031l_table,
           ls_ddic_object     TYPE x031l,
           ls_ddic_object_ref TYPE x031l,
+          lv_currency        TYPE tcurc-waers,
           lv_amount_external TYPE bapicurr-bapicurr,
-          lr_data            TYPE REF TO data,
-          lv_conversion      TYPE string,
           lv_local_ts        TYPE timestamp,
           lv_alpha_out       TYPE string,
+          lv_column_count    TYPE i,
           lv_index_col       TYPE i,
           lv_index           TYPE i.
     FIELD-SYMBOLS: <ls_data>     TYPE data,
                    <lv_data>     TYPE data,
                    <lv_data_ref> TYPE data.
-    CLEAR ev_error_text.
+
+    CLEAR: ev_excel, ev_error_text.
+
 
     TRY.
 
         " Creates active sheet
-        CREATE OBJECT lo_excel.
-
-        " Get active sheet
         IF iv_sheet_title IS NOT INITIAL.
           lv_sheet_title = iv_sheet_title.
         ELSE.
           lv_sheet_title = 'Export'.
         ENDIF.
+        CREATE OBJECT lo_excel.
         lo_worksheet = lo_excel->get_active_worksheet( ).
         lo_worksheet->set_title( ip_title = lv_sheet_title ).
 
@@ -375,28 +380,39 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           ENDLOOP.
         ENDIF.
         DELETE lt_field_catalog WHERE dynpfld NE abap_true.
+        lv_column_count = lines( lt_field_catalog ).
 
 
 **********************************************************************
-        lo_worksheet->bind_table( ip_table          = it_data
-                                  it_field_catalog  = lt_field_catalog
-                                  is_table_settings = ls_table_settings ).
+        lo_worksheet->bind_table(
+          EXPORTING
+            ip_table          = it_data
+            it_field_catalog  = lt_field_catalog
+            is_table_settings = ls_table_settings
+            iv_default_descr  = iv_default_descr
+        ).
 **********************************************************************
+
+        IF it_ddic_object IS NOT INITIAL.
+          lt_ddic_object = it_ddic_object.
+        ELSE.
+          lt_ddic_object = get_ddic_object( it_data ).
+        ENDIF.
 
         " Apply conversion exit.
-        CREATE DATA lr_data LIKE LINE OF it_data.
-        ASSIGN lr_data->* TO <ls_data>.
-        LOOP AT lt_field_catalog INTO ls_field_catalog.
+        LOOP AT lt_ddic_object INTO ls_ddic_object WHERE convexit IS NOT INITIAL.
+          READ TABLE lt_field_catalog TRANSPORTING NO FIELDS WITH KEY fieldname = ls_ddic_object-fieldname.
+          CHECK: sy-subrc EQ 0.
           lv_index_col = sy-tabix.
-          ASSIGN COMPONENT ls_field_catalog-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
-          DESCRIBE FIELD <lv_data> EDIT MASK lv_conversion.
-          IF lv_conversion EQ '==TSTLC' OR
-             lv_conversion EQ '==TSTPS'.
+
+          IF ls_ddic_object-convexit EQ 'TSTLC' OR
+             ls_ddic_object-convexit EQ 'TSTPS'.
             LOOP AT it_data ASSIGNING <ls_data>.
               lv_index = sy-tabix + 1.
-              ASSIGN COMPONENT ls_field_catalog-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              CHECK: sy-subrc EQ 0.
               IF <lv_data> IS NOT INITIAL.
-                IF lv_conversion EQ '==TSTLC'.
+                IF ls_ddic_object-convexit EQ 'TSTLC'.
                   PERFORM convert_to_local_time IN PROGRAM saplsdc_cnv USING <lv_data> CHANGING lv_local_ts.
                 ELSE.
                   lv_local_ts = <lv_data>.
@@ -410,10 +426,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                 ).
               ENDIF.
             ENDLOOP.
-          ELSEIF lv_conversion EQ '==ALPHA'.
+          ELSEIF ls_ddic_object-convexit EQ 'ALPHA'.
             LOOP AT it_data ASSIGNING <ls_data>.
               lv_index = sy-tabix + 1.
-              ASSIGN COMPONENT ls_field_catalog-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              CHECK: sy-subrc EQ 0.
               IF <lv_data> IS NOT INITIAL.
                 CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
                   EXPORTING
@@ -430,31 +447,34 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
               ENDIF.
             ENDLOOP.
           ENDIF.
+
         ENDLOOP.
 
         " Apply currency
-        IF it_ddic_object IS NOT INITIAL.
-          lt_ddic_object = it_ddic_object.
-        ELSE.
-          lt_ddic_object = get_ddic_object( it_data ).
-        ENDIF.
         LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
           READ TABLE lt_field_catalog TRANSPORTING NO FIELDS WITH KEY fieldname = ls_ddic_object-fieldname.
           CHECK: sy-subrc EQ 0.
           lv_index_col = sy-tabix.
+
           READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
           CHECK: sy-subrc EQ 0.
+          READ TABLE lt_field_catalog TRANSPORTING NO FIELDS WITH KEY fieldname = ls_ddic_object_ref-fieldname.
+          CHECK: sy-subrc EQ 0.
+
           LOOP AT it_data ASSIGNING <ls_data>.
             lv_index = sy-tabix + 1.
             ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+            CHECK: sy-subrc EQ 0.
             ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
+            CHECK: sy-subrc EQ 0.
             IF <lv_data> IS NOT INITIAL AND
                <lv_data_ref> IS NOT INITIAL AND
                <lv_data_ref> <> 'USD' AND
                <lv_data_ref> <> 'EUR'.
+              lv_currency = <lv_data_ref>.
               CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
                 EXPORTING
-                  currency        = CONV tcurc-waers( <lv_data_ref> )
+                  currency        = lv_currency
                   amount_internal = <lv_data>
                 IMPORTING
                   amount_external = lv_amount_external.
@@ -471,11 +491,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
         " auto column width
         IF iv_auto_column_width EQ abap_true.
-          lv_index = lines( lt_field_catalog ).
-          DO lv_index TIMES.
+          DO lv_column_count TIMES.
+            lv_index_col = sy-index.
             lo_worksheet->set_column_width(
               EXPORTING
-                ip_column         = sy-index
+                ip_column         = lv_index_col
                 ip_width_autosize = abap_true
             ).
           ENDDO.
@@ -498,7 +518,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           add_image(
             EXPORTING
               iv_image_xstring   = iv_image_xstring
-              iv_col             = lines( lt_field_catalog ) + 1
+              iv_col             = lv_column_count + 1
               io_excel           = lo_excel
           ).
         ENDIF.
@@ -527,41 +547,35 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
   METHOD convert_excel_to_abap.
 * http://www.abap2xlsx.org
-    DATA: lo_excel                    TYPE REF TO zcl_excel,
-          lo_reader                   TYPE REF TO zif_excel_reader,
-          lo_worksheet                TYPE REF TO zcl_excel_worksheet,
-          lv_excel                    TYPE xstring,
-          lt_field                    TYPE za2xh_t_fieldcatalog,
-          ls_field                    TYPE za2xh_s_fieldcatalog,
-          lv_highest_column           TYPE zexcel_cell_column,
-          lv_column                   TYPE zexcel_cell_column,
-          lv_col_str                  TYPE zexcel_cell_column_alpha,
-          lv_highest_row              TYPE zexcel_cell_row,
-          lv_row                      TYPE zexcel_cell_row,
-          lv_char_row                 TYPE string,
-          lv_value                    TYPE zexcel_cell_value,
-          lv_style_guid               TYPE zexcel_cell_style,
-          ls_stylemapping             TYPE zexcel_s_stylemapping,
-          lv_format_code              TYPE zexcel_number_format,
-          lt_ddic_object              TYPE dd_x031l_table,
-          ls_ddic_object              TYPE x031l,
-          ls_ddic_object_ref          TYPE x031l,
-          lv_ddic_object_has_currency TYPE flag,
-          lv_amount_external          TYPE bapicurr-bapicurr,
-          lo_root                     TYPE REF TO cx_root,
-          lo_zcx_excel                TYPE REF TO zcx_excel,
-          lv_conversion               TYPE string,
-          lv_local_ts                 TYPE timestamp,
-          lv_index_col                TYPE i,
-          lv_index                    TYPE i.
-    FIELD-SYMBOLS: <ls_data>     TYPE data,
-                   <lv_data>     TYPE data,
-                   <lv_data_ref> TYPE data.
+    DATA: lo_excel           TYPE REF TO zcl_excel,
+          lo_reader          TYPE REF TO zif_excel_reader,
+          lo_worksheet       TYPE REF TO zcl_excel_worksheet,
+          lv_excel           TYPE xstring,
+          lt_field           TYPE za2xh_t_fieldcatalog,
+          ls_field           TYPE za2xh_s_fieldcatalog,
+          lt_comp            TYPE abap_component_tab,
+          ls_comp            TYPE abap_componentdescr,
+          lo_tab_type        TYPE REF TO cl_abap_tabledescr,
+          lr_data            TYPE REF TO data,
+          lt_ddic_object     TYPE dd_x031l_table,
+          ls_ddic_object     TYPE x031l,
+          ls_ddic_object_ref TYPE x031l,
+          lv_currency        TYPE tcurc-waers,
+          lv_amount_external TYPE bapicurr-bapicurr,
+          lo_root            TYPE REF TO cx_root,
+          lo_zcx_excel       TYPE REF TO zcx_excel,
+          lv_index           TYPE i.
+    FIELD-SYMBOLS: <lt_data>          TYPE STANDARD TABLE,
+                   <ls_data>          TYPE data,
+                   <lv_data>          TYPE data,
+                   <lv_data_ref>      TYPE data,
+                   <ls_sheet_content> TYPE zexcel_s_cell_data.
 
     CLEAR: ev_error_text, et_data[].
 
     CHECK: iv_excel IS NOT INITIAL.
     lv_excel = iv_excel.
+    " DRM Decode
     do_drm_decode(
       CHANGING
         cv_excel = lv_excel
@@ -569,6 +583,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
 
 
     TRY.
+        " Field catalog
         IF it_field IS NOT INITIAL.
           lt_field = it_field.
         ELSE.
@@ -580,153 +595,99 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           ).
         ENDIF.
 
+        " Create internal table with string columns
+        LOOP AT lt_field INTO ls_field.
+          ls_comp-name = ls_field-fieldname.
+          ls_comp-type = cl_abap_elemdescr=>get_string( ).
+          APPEND ls_comp TO lt_comp.
+        ENDLOOP.
+        lo_tab_type = cl_abap_tabledescr=>create( cl_abap_structdescr=>create( lt_comp ) ).
+        CREATE DATA lr_data TYPE HANDLE lo_tab_type.
+        ASSIGN lr_data->* TO <lt_data>.
+
+
         CREATE OBJECT lo_reader TYPE zcl_excel_reader_2007.
         lo_excel = lo_reader->load( lv_excel ).
-        lo_excel->set_active_sheet_index( iv_sheet_no ).
-        lo_worksheet = lo_excel->get_active_worksheet( ).
+        lo_worksheet = lo_excel->get_worksheet_by_index( iv_sheet_no ).
+        adjust_date_time_to_abap( lo_worksheet ).
 
-        lv_highest_column = lo_worksheet->get_highest_column( ).
-        lv_highest_row    = lo_worksheet->get_highest_row( ).
-        lv_row = iv_begin_row.
+        READ TABLE lo_worksheet->sheet_content TRANSPORTING NO FIELDS WITH KEY cell_row = iv_begin_row.
+        IF sy-subrc EQ 0.
+          lv_index = sy-tabix.
+        ENDIF.
 
-        WHILE lv_row <= lv_highest_row.
-          APPEND INITIAL LINE TO et_data ASSIGNING <ls_data>.
-          lv_column = 1.
+        LOOP AT lo_worksheet->sheet_content ASSIGNING <ls_sheet_content> FROM lv_index.
+          AT NEW cell_row.
+            " New line
+            APPEND INITIAL LINE TO <lt_data> ASSIGNING <ls_data>.
+            lv_index = sy-tabix.
+          ENDAT.
 
-          WHILE lv_column <= lv_highest_column.
-            lv_col_str = zcl_excel_common=>convert_column2alpha( lv_column ).
-            lo_worksheet->get_cell(
-              EXPORTING
-                ip_column = lv_col_str
-                ip_row    = lv_row
-              IMPORTING
-                ep_value  = lv_value
-                ep_guid   = lv_style_guid
-            ).
-
-            IF lv_style_guid IS NOT INITIAL AND lv_value IS NOT INITIAL.
-              ls_stylemapping = lo_excel->get_style_to_guid( lv_style_guid ).
-              lv_format_code = ls_stylemapping-complete_style-number_format-format_code.
-              " https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
-              IF lv_format_code CS ';'.
-                lv_format_code = lv_format_code(sy-fdpos).
-              ENDIF.
-*              CASE lv_format_code.
-*                WHEN zcl_excel_style_number_format=>c_format_date_ddmmyyyy
-*                  OR zcl_excel_style_number_format=>c_format_date_ddmmyyyydot
-*                  OR zcl_excel_style_number_format=>c_format_date_dmminus
-*                  OR zcl_excel_style_number_format=>c_format_date_dmyminus
-*                  OR zcl_excel_style_number_format=>c_format_date_dmyslash
-*                  OR zcl_excel_style_number_format=>c_format_date_myminus
-*                  OR zcl_excel_style_number_format=>c_format_date_std
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx14
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx15
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx16
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx17
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx22
-*                  OR zcl_excel_style_number_format=>c_format_date_yymmdd
-*                  OR zcl_excel_style_number_format=>c_format_date_yymmddminus
-*                  OR zcl_excel_style_number_format=>c_format_date_yymmddslash
-*                  OR zcl_excel_style_number_format=>c_format_date_yyyymmdd
-*                  OR zcl_excel_style_number_format=>c_format_date_yyyymmddminus
-*                  OR zcl_excel_style_number_format=>c_format_date_yyyymmddslash.
-*                  " Convert excel date to ABAP date
-*                  lv_value = zcl_excel_common=>excel_string_to_date( lv_value ).
-*                WHEN zcl_excel_style_number_format=>c_format_date_time1
-*                  OR zcl_excel_style_number_format=>c_format_date_time2
-*                  OR zcl_excel_style_number_format=>c_format_date_time3
-*                  OR zcl_excel_style_number_format=>c_format_date_time4
-*                  OR zcl_excel_style_number_format=>c_format_date_time5
-*                  OR zcl_excel_style_number_format=>c_format_date_time6
-*                  OR zcl_excel_style_number_format=>c_format_date_time7
-*                  OR zcl_excel_style_number_format=>c_format_date_time8
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx45
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx46
-*                  OR zcl_excel_style_number_format=>c_format_date_xlsx47.
-*                  " Convert excel time to ABAP time
-*                  lv_value = zcl_excel_common=>excel_string_to_time( lv_value ).
-*              ENDCASE.
-              IF lv_format_code NA '#?'.
-                " Remove color pattern
-                REPLACE ALL OCCURRENCES OF REGEX '\[\L[^]]*\]' IN lv_format_code WITH ''.
-                IF lv_format_code CA 'yd' OR lv_format_code EQ zcl_excel_style_number_format=>c_format_date_std.
-                  " Convert excel date to ABAP date
-                  lv_value = zcl_excel_common=>excel_string_to_date( lv_value ).
-                ELSEIF lv_format_code CA 'hs'.
-                  " Convert excel time to ABAP time
-                  lv_value = zcl_excel_common=>excel_string_to_time( lv_value ).
-                ENDIF.
-              ENDIF.
+          IF <ls_sheet_content>-cell_value IS NOT INITIAL.
+            ASSIGN COMPONENT <ls_sheet_content>-cell_column OF STRUCTURE <ls_data> TO <lv_data>.
+            IF sy-subrc EQ 0.
+              <lv_data> = <ls_sheet_content>-cell_value.
+              CONDENSE <lv_data>.
             ENDIF.
-
-            CONDENSE lv_value.
-            IF lv_value IS NOT INITIAL.
-*              ASSIGN COMPONENT lv_column OF STRUCTURE <ls_data> TO <lv_data>.
-              READ TABLE lt_field INTO ls_field INDEX lv_column.
-              IF sy-subrc EQ 0.
-                ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
-                IF sy-subrc EQ 0.
-                  <lv_data> = lv_value.
-                ENDIF.
-              ENDIF.
-            ENDIF.
-            lv_column = lv_column + 1.
-          ENDWHILE.
-
-          " Delete empty line
-          IF <ls_data> IS INITIAL.
-            DELETE et_data INDEX lines( et_data ).
           ENDIF.
-          lv_row = lv_row + 1.
-        ENDWHILE.
+
+          AT END OF cell_row.
+            " Delete empty line
+            IF <ls_data> IS INITIAL.
+              DELETE <lt_data> INDEX lv_index.
+            ENDIF.
+          ENDAT.
+        ENDLOOP.
 
 
-        CHECK: et_data IS NOT INITIAL.
+        CHECK: <lt_data> IS NOT INITIAL.
+        MOVE-CORRESPONDING <lt_data> TO et_data.
+
+        lt_ddic_object = get_ddic_object( et_data ).
 
         " Apply conversion exit.
-        LOOP AT lt_field INTO ls_field.
-          ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
-          DESCRIBE FIELD <lv_data> EDIT MASK lv_conversion.
-          IF lv_conversion EQ '==TSTLC'.
+        LOOP AT lt_ddic_object INTO ls_ddic_object WHERE convexit IS NOT INITIAL.
+          IF ls_ddic_object-convexit EQ 'TSTLC'.
             LOOP AT et_data ASSIGNING <ls_data>.
-              lv_index = sy-tabix + 1.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              CHECK: sy-subrc EQ 0.
               IF <lv_data> IS NOT INITIAL.
                 PERFORM convert_to_utc_time IN PROGRAM saplsdc_cnv USING <lv_data> CHANGING <lv_data>.
               ENDIF.
             ENDLOOP.
-          ELSEIF lv_conversion EQ '==ALPHA'.
+          ELSEIF ls_ddic_object-convexit EQ 'ALPHA'.
             LOOP AT et_data ASSIGNING <ls_data>.
-              lv_index = sy-tabix + 1.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
-              CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
-                EXPORTING
-                  input  = <lv_data>
-                IMPORTING
-                  output = <lv_data>.
+              ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+              CHECK: sy-subrc EQ 0.
+              IF <lv_data> IS NOT INITIAL.
+                CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+                  EXPORTING
+                    input  = <lv_data>
+                  IMPORTING
+                    output = <lv_data>.
+              ENDIF.
             ENDLOOP.
           ENDIF.
         ENDLOOP.
-
-        lt_ddic_object = get_ddic_object( et_data ).
 
         " Apply currency
         LOOP AT lt_ddic_object INTO ls_ddic_object WHERE reffield IS NOT INITIAL.
           READ TABLE lt_ddic_object INTO ls_ddic_object_ref WITH KEY fieldname = ls_ddic_object-reffield dtyp = 'CUKY'.
           CHECK: sy-subrc EQ 0.
           LOOP AT et_data ASSIGNING <ls_data>.
-            lv_index = sy-tabix + 1.
             ASSIGN COMPONENT ls_ddic_object-fieldname OF STRUCTURE <ls_data> TO <lv_data>.
+            CHECK: sy-subrc EQ 0.
             IF <lv_data> IS NOT INITIAL.
               ASSIGN COMPONENT ls_ddic_object_ref-fieldname OF STRUCTURE <ls_data> TO <lv_data_ref>.
+              CHECK: sy-subrc EQ 0.
               IF <lv_data_ref> IS NOT INITIAL AND
                  <lv_data_ref> <> 'USD' AND
                  <lv_data_ref> <> 'EUR'.
-
+                lv_currency = <lv_data_ref>.
                 lv_amount_external = <lv_data>.
                 CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_INTERNAL'
                   EXPORTING
-                    currency             = CONV tcurc-waers( <lv_data_ref> )
+                    currency             = lv_currency
                     amount_external      = lv_amount_external
                     max_number_of_digits = 23
                   IMPORTING
@@ -736,14 +697,10 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           ENDLOOP.
         ENDLOOP.
 
-
+      CATCH zcx_excel INTO lo_zcx_excel.    " Exceptions for ABAP2XLSX
+        ev_error_text = lo_zcx_excel->error.
       CATCH cx_root INTO lo_root.
         ev_error_text = lo_root->get_text( ).
-        IF lv_row IS NOT INITIAL.
-          lv_char_row = lv_row.
-          CONDENSE lv_char_row NO-GAPS.
-          ev_error_text = ev_error_text && '(Col:' && lv_col_str && ',Row:' && lv_char_row && ')'.
-        ENDIF.
     ENDTRY.
 
 
@@ -971,7 +928,11 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
   METHOD get_ddic_object.
     DATA: lo_type_desc   TYPE REF TO cl_abap_typedescr,
           lo_table_desc  TYPE REF TO cl_abap_tabledescr,
-          lo_struct_desc TYPE REF TO cl_abap_structdescr.
+          lo_struct_desc TYPE REF TO cl_abap_structdescr,
+          lt_comp_view   TYPE abap_component_view_tab,
+          ls_comp_view   TYPE abap_simple_componentdescr,
+          lt_ddic_object TYPE dd_x031l_table,
+          ls_ddic_object TYPE x031l.
 
     lo_type_desc = cl_abap_typedescr=>describe_by_data( i_data ).
     CASE lo_type_desc->kind.
@@ -994,6 +955,23 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           no_ddic_type = 2
           OTHERS       = 3
       ).
+      IF rt_ddic_object IS INITIAL.
+        lt_comp_view = lo_struct_desc->get_included_view( ).
+        LOOP AT lt_comp_view INTO ls_comp_view.
+          ls_comp_view-type->get_ddic_object(
+            RECEIVING
+              p_object     = lt_ddic_object
+            EXCEPTIONS
+              not_found    = 1
+              no_ddic_type = 2
+              OTHERS       = 3
+          ).
+          IF lt_ddic_object IS NOT INITIAL.
+            lt_ddic_object[ 1 ]-fieldname = ls_comp_view-name.
+            APPEND LINES OF lt_ddic_object TO rt_ddic_object.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
     ENDIF.
 
   ENDMETHOD.
@@ -1232,5 +1210,66 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
           WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
       ENDIF.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD adjust_date_time_to_abap.
+    DATA: lt_style        TYPE TABLE OF zexcel_cell_style,
+          lv_style        TYPE zexcel_cell_style,
+          ls_stylemapping TYPE zexcel_s_stylemapping,
+          lv_format_code  TYPE zexcel_number_format,
+          lv_abap_type    TYPE abap_typekind.
+    FIELD-SYMBOLS: <ls_sheet_content> TYPE zexcel_s_cell_data.
+
+    CHECK: io_worksheet IS NOT INITIAL AND
+           io_worksheet->sheet_content IS NOT INITIAL.
+
+    " Collect style
+    LOOP AT io_worksheet->sheet_content ASSIGNING <ls_sheet_content> WHERE cell_style IS NOT INITIAL AND data_type IS INITIAL.
+      APPEND <ls_sheet_content>-cell_style TO lt_style.
+    ENDLOOP.
+
+    CHECK: lt_style IS NOT INITIAL.
+
+    SORT lt_style.
+    DELETE ADJACENT DUPLICATES FROM lt_style.
+
+    LOOP AT lt_style INTO lv_style.
+      CLEAR: lv_abap_type.
+
+      ls_stylemapping = io_worksheet->excel->get_style_to_guid( lv_style ).
+      lv_format_code = ls_stylemapping-complete_style-number_format-format_code.
+      " https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
+      IF lv_format_code CS ';'.
+        lv_format_code = lv_format_code(sy-fdpos).
+      ENDIF.
+      CHECK: lv_format_code NA '#?'.
+
+      " Remove color pattern
+      REPLACE ALL OCCURRENCES OF REGEX '\[\L[^]]*\]' IN lv_format_code WITH ''.
+
+      IF lv_format_code CA 'yd' OR lv_format_code EQ zcl_excel_style_number_format=>c_format_date_std.
+        " DATE = yyyymmdd
+        lv_abap_type = cl_abap_typedescr=>typekind_date.
+      ELSEIF lv_format_code CA 'hs'.
+        " TIME = hhmmss
+        lv_abap_type = cl_abap_typedescr=>typekind_time.
+      ENDIF.
+
+      CHECK: lv_abap_type IS NOT INITIAL.
+
+      LOOP AT io_worksheet->sheet_content ASSIGNING <ls_sheet_content> WHERE cell_style = lv_style.
+        <ls_sheet_content>-data_type = lv_abap_type.
+        CHECK: <ls_sheet_content>-cell_value IS NOT INITIAL.
+        CASE lv_abap_type.
+          WHEN cl_abap_typedescr=>typekind_date.
+            <ls_sheet_content>-cell_value = zcl_excel_common=>excel_string_to_date( <ls_sheet_content>-cell_value ).
+          WHEN cl_abap_typedescr=>typekind_time.
+            <ls_sheet_content>-cell_value = zcl_excel_common=>excel_string_to_time( <ls_sheet_content>-cell_value ).
+        ENDCASE.
+      ENDLOOP.
+
+    ENDLOOP.
+
   ENDMETHOD.
 ENDCLASS.
