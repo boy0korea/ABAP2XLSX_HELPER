@@ -30,9 +30,9 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
 
 
   METHOD enh_cl_fpm_list_uibb_assist_at.
-    DATA: lt_field2              TYPE zcl_abap2xlsx_helper=>tt_field,
-          lt_field               TYPE zcl_abap2xlsx_helper=>tt_field,
-          ls_field               TYPE zcl_abap2xlsx_helper=>ts_field,
+    DATA: lt_field2              TYPE za2xh_t_fieldcatalog,
+          lt_field               TYPE za2xh_t_fieldcatalog,
+          ls_field               TYPE za2xh_s_fieldcatalog,
           ls_field_usage         TYPE fpmgb_s_fieldusage,
           lo_context_data_s_type TYPE REF TO cl_abap_structdescr,
           lo_context_data_t_type TYPE REF TO cl_abap_tabledescr,

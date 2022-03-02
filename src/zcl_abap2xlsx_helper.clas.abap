@@ -5,18 +5,20 @@ class ZCL_ABAP2XLSX_HELPER definition
 public section.
 
   types:
-    BEGIN OF ts_field,
-        fieldname    TYPE fieldname,
-        label_text   TYPE scrtext_l,
-        fixed_values TYPE wdr_context_attr_value_list,
-      END OF ts_field .
+    BEGIN OF ts_error_log,
+        row          TYPE i,
+        fieldname    TYPE string,
+        abap_value   TYPE string,
+        excel_value  TYPE string,
+        excel_coords TYPE string,
+      END OF ts_error_log .
   types:
-    tt_field TYPE TABLE OF ts_field .
+    tt_error_log TYPE STANDARD TABLE OF ts_error_log WITH DEFAULT KEY .
 
   class-methods EXCEL_DOWNLOAD
     importing
       !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IT_FIELD type ZA2XH_T_FIELDCATALOG optional
       !IV_FILENAME type CLIKE optional
       !IV_SHEET_TITLE type CLIKE optional
       !IV_IMAGE_XSTRING type XSTRING optional
@@ -29,7 +31,7 @@ public section.
   class-methods EXCEL_EMAIL
     importing
       !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IT_FIELD type ZA2XH_T_FIELDCATALOG optional
       !IV_SUBJECT type CLIKE optional
       !IV_SENDER type CLIKE optional
       !IT_RECEIVER type STRINGTAB optional
@@ -42,7 +44,7 @@ public section.
   class-methods EXCEL_UPLOAD
     importing
       !IV_EXCEL type XSTRING optional
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IT_FIELD type ZA2XH_T_FIELDCATALOG optional
       !IV_BEGIN_ROW type INT4 default 2
       !IV_SHEET_NO type INT1 default 1
     exporting
@@ -53,11 +55,11 @@ public section.
       !IT_DATA type STANDARD TABLE
       !IV_DEFAULT_DESCR type C default 'L'
     exporting
-      !ET_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD .
+      !ET_FIELD type ZA2XH_T_FIELDCATALOG .
   class-methods CONVERT_ABAP_TO_EXCEL
     importing
       !IT_DATA type STANDARD TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IT_FIELD type ZA2XH_T_FIELDCATALOG optional
       !IV_SHEET_TITLE type CLIKE optional
       !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
@@ -70,7 +72,7 @@ public section.
     importing
       !IV_DATA_JSON type STRING
       !IT_DDIC_OBJECT type DD_X031L_TABLE
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD
+      !IT_FIELD type ZA2XH_T_FIELDCATALOG
       !IV_SHEET_TITLE type CLIKE optional
       !IV_IMAGE_XSTRING type XSTRING optional
       !IV_ADD_FIXEDVALUE_SHEET type FLAG default ABAP_TRUE
@@ -82,7 +84,7 @@ public section.
   class-methods CONVERT_EXCEL_TO_ABAP
     importing
       !IV_EXCEL type XSTRING
-      !IT_FIELD type ZCL_ABAP2XLSX_HELPER=>TT_FIELD optional
+      !IT_FIELD type ZA2XH_T_FIELDCATALOG optional
       !IV_BEGIN_ROW type INT4 default 2
       !IV_SHEET_NO type INT1 default 1
     exporting
@@ -381,10 +383,10 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
   METHOD test.
     DATA: lt_sflight  TYPE TABLE OF sflight,
           lt_sflight2 TYPE TABLE OF sflight,
-          lt_field    TYPE zcl_abap2xlsx_helper=>tt_field,
+          lt_field    TYPE za2xh_t_fieldcatalog,
           ls_sflight  TYPE sflight,
           lv_xstring  TYPE xstring.
-    FIELD-SYMBOLS: <ls_field> TYPE zcl_abap2xlsx_helper=>ts_field.
+    FIELD-SYMBOLS: <ls_field> TYPE za2xh_s_fieldcatalog.
 
     SELECT *
       FROM sflight
@@ -447,9 +449,9 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         et_data      = lt_sflight2
     ).
     ls_sflight-mandt = sy-mandt.
-    MODIFY lt_sflight2 FROM ls_sflight TRANSPORTING mandt WHERE mandt <> ls_sflight-mandt.
+    MODIFY lt_sflight2 FROM ls_sflight TRANSPORTING mandt WHERE mandt NE ls_sflight-mandt.
 
-    IF lt_sflight <> lt_sflight2.
+    IF lt_sflight NE lt_sflight2.
       BREAK-POINT.
     ENDIF.
 
