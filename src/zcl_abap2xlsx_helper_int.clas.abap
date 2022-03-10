@@ -742,6 +742,8 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                   ENDCASE.
                 ENDIF.
               ENDIF.
+
+              " condense
               CONDENSE <lv_data>.
             ENDIF.
           ENDIF.
