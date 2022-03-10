@@ -4,17 +4,6 @@ class ZCL_ABAP2XLSX_HELPER definition
 
 public section.
 
-  types:
-    BEGIN OF ts_error_log,
-        row          TYPE i,
-        fieldname    TYPE string,
-        abap_value   TYPE string,
-        excel_value  TYPE string,
-        excel_coords TYPE string,
-      END OF ts_error_log .
-  types:
-    tt_error_log TYPE STANDARD TABLE OF ts_error_log WITH DEFAULT KEY .
-
   class-methods EXCEL_DOWNLOAD
     importing
       !IT_DATA type STANDARD TABLE
@@ -49,7 +38,8 @@ public section.
       !IV_SHEET_NO type INT1 default 1
     exporting
       !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
+      !EV_ERROR_TEXT type STRING
+      !ET_ERROR_LOG type ZA2XH_T_ERROR_LOG .
   class-methods GET_FIELDCATALOG
     importing
       !IT_DATA type STANDARD TABLE
@@ -89,7 +79,8 @@ public section.
       !IV_SHEET_NO type INT1 default 1
     exporting
       !ET_DATA type STANDARD TABLE
-      !EV_ERROR_TEXT type STRING .
+      !EV_ERROR_TEXT type STRING
+      !ET_ERROR_LOG type ZA2XH_T_ERROR_LOG .
   class-methods GET_XSTRING_FROM_SMW0
     importing
       !IV_SMW0 type WWWDATA-OBJID
@@ -191,7 +182,8 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         iv_sheet_no   = iv_sheet_no
       IMPORTING
         et_data       = et_data
-        ev_error_text = ev_error_text.
+        ev_error_text = ev_error_text
+        et_error_log  = et_error_log.
   ENDMETHOD.
 
 
@@ -268,7 +260,8 @@ CLASS ZCL_ABAP2XLSX_HELPER IMPLEMENTATION.
         iv_sheet_no   = iv_sheet_no
       IMPORTING
         et_data       = et_data
-        ev_error_text = ev_error_text.
+        ev_error_text = ev_error_text
+        et_error_log  = et_error_log.
   ENDMETHOD.
 
 
