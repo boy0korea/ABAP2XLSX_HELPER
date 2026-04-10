@@ -496,6 +496,7 @@ CLASS ZCL_ABAP2XLSX_HELPER_INT IMPLEMENTATION.
                 ip_width_autosize = abap_true
             ).
           ENDDO.
+          lo_worksheet->calculate_column_widths( ).
         ENDIF.
 
         " add fixed value sheet
