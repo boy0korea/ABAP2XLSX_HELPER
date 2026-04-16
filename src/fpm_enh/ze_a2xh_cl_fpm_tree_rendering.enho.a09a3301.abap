@@ -11,8 +11,9 @@ ENHANCEMENT 0 ZE_A2XH_CL_FPM_TREE_RENDERING.
     ENDIF.
 
     IF <lo_export_btn_choice_z> IS ASSIGNED AND <lo_export_btn_choice_z> IS BOUND.
-      zcl_a2xh_fpm_enh=>enh_cl_fpm_list_uibb_renderer_(
+      zcl_a2xh_fpm_enh=>enh_cl_fpm_list_uibb_renderer2(
         EXPORTING
+          iv_export_format     = ls_settings-export_format
           io_export_btn_choice = <lo_export_btn_choice_z>
           iv_export_action     = lc_export_action
       ).

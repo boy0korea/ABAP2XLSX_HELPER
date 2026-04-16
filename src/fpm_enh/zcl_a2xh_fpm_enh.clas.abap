@@ -18,6 +18,11 @@ public section.
     importing
       !IO_EXPORT_BTN_CHOICE type ref to CL_WD_TOOLBAR_BTN_CHOICE
       !IV_EXPORT_ACTION type STRING .
+  class-methods ENH_CL_FPM_LIST_UIBB_RENDERER2
+    importing
+      !IV_EXPORT_FORMAT type FPMGB_EXPORT_FORMAT
+      !IO_EXPORT_BTN_CHOICE type ref to CL_WD_TOOLBAR_BTN_CHOICE
+      !IV_EXPORT_ACTION type STRING .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
@@ -226,5 +231,75 @@ CLASS ZCL_A2XH_FPM_ENH IMPLEMENTATION.
 
   METHOD readme.
 * https://github.com/boy0korea/ABAP2XLSX_HELPER
+  ENDMETHOD.
+
+
+  METHOD enh_cl_fpm_list_uibb_renderer2.
+    DATA: lo_tab_action TYPE REF TO cl_wd_menu_action_item,
+          lo_el         TYPE REF TO cl_abap_elemdescr,
+          lt_fv         TYPE ddfixvalues,
+          ls_fv         TYPE ddfixvalue.
+
+    CHECK: gv_list_uibb_export_on EQ abap_true AND
+           zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
+
+    CHECK: io_export_btn_choice IS BOUND.
+
+    IF iv_export_format EQ if_fpm_list_types=>cs_export_format-selection_at_runtime.
+      lo_el ?= cl_abap_elemdescr=>describe_by_data( if_fpm_list_types=>cs_export_format-selection_at_runtime ).
+      lt_fv = lo_el->get_ddic_fixed_values( ).
+
+      LOOP AT lt_fv INTO ls_fv WHERE low CP 'Z*'.
+        lo_tab_action =
+          cl_wd_menu_action_item=>new_menu_action_item(
+            id           = `MNUAI_FPM_EXPORT_` && ls_fv-low "#EC NOTEXT
+            on_action    = iv_export_action  " lif_renderer_constants=>cs_table_action-export
+            text         = CONV string( ls_fv-ddtext )
+            enabled      = abap_true
+            visible      = abap_true
+        ).
+        DATA(lt_action_parameters) = VALUE wdr_name_value_list(
+          (
+             name  = 'FORMAT'   " lc_export_action_format_param
+             value = ls_fv-low
+          )
+        ).
+        lo_tab_action->map_on_action( lt_action_parameters ).
+        io_export_btn_choice->add_choice( lo_tab_action ).
+      ENDLOOP.
+    ELSEIF iv_export_format CP 'Z*'.
+      lo_tab_action = io_export_btn_choice->get_choice( id = 'MNUAI_FPM_EXPORT_ACTION_DIALOG' ).
+      IF lo_tab_action IS NOT INITIAL.
+        io_export_btn_choice->remove_choice( id = 'MNUAI_FPM_EXPORT_ACTION_DIALOG' ).
+      ENDIF.
+    ENDIF.
+
+
+* enhancement 위치:
+*Enhanced Development Object    CL_FPM_LIST_UIBB_RENDERER_ATS
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""$"$\SE:(1) Class LCL_TABLE_RENDERER, Method RENDER_STANDARD_TOOLBAR_ITEMS, End                                                                               A
+*$*$-Start: (1)---------------------------------------------------------------------------------$*$*
+*ENHANCEMENT 1  ZE_A2XH_CL_FPM_LIST_UIBB_RENDE.    "active version
+** additional export menu.
+*    FIELD-SYMBOLS: <lo_export_btn_choice_z> TYPE REF TO cl_wd_toolbar_btn_choice.
+*
+**    ASSIGN lo_export_btn_choice_new TO <lo_export_btn_choice_z>.
+*    ASSIGN ('LO_EXPORT_BTN_CHOICE_NEW') TO <lo_export_btn_choice_z>.
+*    IF <lo_export_btn_choice_z> IS NOT ASSIGNED.
+*      " old version
+*      ASSIGN ('LO_EXPORT_BTN_CHOICE') TO <lo_export_btn_choice_z>.
+*    ENDIF.
+*
+*    IF <lo_export_btn_choice_z> IS ASSIGNED AND <lo_export_btn_choice_z> IS BOUND.
+*      zcl_a2xh_fpm_enh=>enh_cl_fpm_list_uibb_renderer2(
+*        EXPORTING
+*          iv_export_format     = lrs_table_settings->*-export_format
+*          io_export_btn_choice = <lo_export_btn_choice_z>
+*          iv_export_action     = lif_renderer_constants=>cs_table_action-export
+*      ).
+*    ENDIF.
+*
+*ENDENHANCEMENT.
+*$*$-End:   (1)---------------------------------------------------------------------------------$*$*
   ENDMETHOD.
 ENDCLASS.
